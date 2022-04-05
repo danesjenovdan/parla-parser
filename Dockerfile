@@ -1,8 +1,10 @@
-FROM rg.fr-par.scw.cloud/djnd/parladata-slovenija:latest
+FROM rg.fr-par.scw.cloud/djnd/parladata-bosna:latest
 
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get -y install locales locales-all
+
+RUN apt-get install libpoppler-cpp-dev -y
 
 RUN /usr/local/bin/python -m pip install --upgrade pip
 
