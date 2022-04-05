@@ -5,5 +5,5 @@ resources:
   - cronjob.yaml
 images:
   - name: parlaparser-bosna
-    newName: rg.fr-par.scw.cloud/djnd/parlaparser-slovenija
+    newName: rg.fr-par.scw.cloud/djnd/parlaparser-bosna
     newTag: 'latest'
