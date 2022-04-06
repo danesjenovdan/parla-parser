@@ -15,8 +15,8 @@ class QuestionsSpider(scrapy.Spider):
     }
 
     start_urls = [
-        'http://parlament.ba/oQuestion/GetORQuestions?RDId=&Rep-6=&Rep-4=&MandateId=6&DateFrom=&DateTo=',
-        'http://parlament.ba/oQuestion/GetODQuestions?RDId=&Del-6=&Del-4=&MandateId=6&DateFrom=&DateTo=',
+        'https://parlament.ba/oQuestion/GetORQuestions?RDId=&Rep-6=&Rep-4=&MandateId=6&DateFrom=&DateTo=',
+        'https://parlament.ba/oQuestion/GetODQuestions?RDId=&Del-6=&Del-4=&MandateId=6&DateFrom=&DateTo=',
     ]
     base_url = 'http://parlament.ba'
 

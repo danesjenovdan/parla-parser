@@ -67,17 +67,17 @@ class QuestionParser(BaseParser):
         else:
             author_ids = []
             author_org_ids = []
-            author_id = self.get_or_add_person(
+            author = self.storage.people_storage.get_or_add_person(
                 fix_name(self.author),
             )
 
-            author_ids.append(author_id)
+            author_ids.append(author.id)
 
             if self.session:
                 session_name = self.session.split(',')
-                session_id = self.reference.sessions_by_name.get(session_name[0].strip())
-                if session_id:
-                    self.question['session'] = session_id
+                session = self.storage.session_storage.get_session_by_name(session_name[0].strip())
+                if session:
+                    self.question['session'] = session.id
 
             self.question['person_authors'] = author_ids
             self.question['organization_authors'] = author_org_ids
@@ -88,12 +88,12 @@ class QuestionParser(BaseParser):
             logger.debug('*'*60)
 
             # send question
-            question_id, method = self.question_storage.add_or_get_question(self.question)
+            question = self.question_storage.add_or_get_question(self.question)
 
             # send link
-            if method == 'set' and self.links:
+            if question.is_new and self.links:
                 for link in self.links:
                     if link['url']:
-                        link['question'] = question_id
+                        link['question'] = question.id
                         link['url'] = self.base_url + link['url']
-                        self.add_link(link)
+                        self.storage.set_link(link)

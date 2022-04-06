@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "parse speeches, votes, sessions"
-scrapy crawl sessions
+#scrapy crawl sessions
 scrapy crawl questions
 cd /app
 echo "start setting votes results"
