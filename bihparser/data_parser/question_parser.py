@@ -14,6 +14,7 @@ class QuestionParser(BaseParser):
     base_url = 'http://parlament.ba'
 
     def __init__(self, data, reference):
+
         logger.debug('\n \n \n \n')
         logger.debug( '============= QuestionParser ====================')
         logger.debug('Data: %s', data)
@@ -21,6 +22,9 @@ class QuestionParser(BaseParser):
 
         # call init of parent object
         super(QuestionParser, self).__init__(reference)
+
+        self.storage = reference.storage
+        self.question_storage = reference.storage.question_storage
 
         # copy item to object
         self.author = data['name']
@@ -35,7 +39,7 @@ class QuestionParser(BaseParser):
         self.question = {}
         self.date_f = None
 
-        if self.is_question_saved():
+        if self.question_storage.check_if_question_is_parsed({'gov_id': self.signature}):
             # TODO edit question if we need it make force_render mode
             logger.debug("This question is already parsed")
 
@@ -44,8 +48,6 @@ class QuestionParser(BaseParser):
             self.parse_time()
             self.parse_data()
 
-    def is_question_saved(self):
-        return self.signature in self.reference.questions.keys()
 
     def get_question_id(self):
         return self.reference.questions[self.signature]
@@ -54,10 +56,10 @@ class QuestionParser(BaseParser):
         sp = self.date.split(',')
         date = sp[-1].strip()
         self.date_f = datetime.strptime(date, "%d.%m.%Y.")
-        self.question['date'] = self.date_f.isoformat()
+        self.question['timestamp'] = self.date_f.isoformat()
 
     def parse_data(self):
-        self.question['signature'] = self.signature
+        self.question['gov_id'] = self.signature
         self.question['title'] = self.title
 
         if not self.author.strip():
@@ -65,47 +67,33 @@ class QuestionParser(BaseParser):
         else:
             author_ids = []
             author_org_ids = []
-            author_id = self.get_or_add_person(
+            author = self.storage.people_storage.get_or_add_person(
                 fix_name(self.author),
             )
 
-            party_id = self.get_membership_of_member_on_date(str(author_id), self.date_f)
-
-            author_ids.append(author_id)
-            if party_id:
-                author_org_ids.append(party_id)
-
-            # for now is recipient_id None
-            # recipient_id = None
-            #recipient_id = self.get_or_add_person(recipient_pr)
-            #if recipient_org:
-            #    recipient_party_id = self.add_organization(recipient_org.strip(), 'gov')
-            #else:
-            #    recipient_party_id = None
+            author_ids.append(author.id)
 
             if self.session:
                 session_name = self.session.split(',')
-                session_id = self.reference.sessions_by_name.get(session_name[0].strip())
-                if session_id:
-                    self.question['session'] = session_id
+                session = self.storage.session_storage.get_session_by_name(session_name[0].strip())
+                if session:
+                    self.question['session'] = session.id
 
-            self.question['authors'] = author_ids
-            self.question['author_orgs'] = author_org_ids
+            self.question['person_authors'] = author_ids
+            self.question['organization_authors'] = author_org_ids
             self.question['recipient_text'] = self.recipient.strip() if self.recipient else None
-            #self.question['recipient_person'] = [recipient_id]
-            #self.question['recipient_organization'] = [recipient_party_id]
 
             logger.debug('*'*60)
             logger.debug('Question: %s', self.question)
             logger.debug('*'*60)
 
             # send question
-            question_id, method = self.add_or_get_question(self.question['signature'], self.question)
+            question = self.question_storage.add_or_get_question(self.question)
 
             # send link
-            if method == 'set' and self.links:
+            if question.is_new and self.links:
                 for link in self.links:
                     if link['url']:
-                        link['question'] = question_id
+                        link['question'] = question.id
                         link['url'] = self.base_url + link['url']
-                        self.add_link(link)
+                        self.storage.set_link(link)

@@ -15,15 +15,15 @@ class QuestionsSpider(scrapy.Spider):
     }
 
     start_urls = [
-        'http://parlament.ba/oQuestion/GetORQuestions?RDId=&Rep-6=&Rep-4=&MandateId=6&DateFrom=&DateTo=',
-        'http://parlament.ba/oQuestion/GetODQuestions?RDId=&Del-6=&Del-4=&MandateId=6&DateFrom=&DateTo=',
+        'https://parlament.ba/oQuestion/GetORQuestions?RDId=&Rep-6=&Rep-4=&MandateId=6&DateFrom=&DateTo=',
+        'https://parlament.ba/oQuestion/GetODQuestions?RDId=&Del-6=&Del-4=&MandateId=6&DateFrom=&DateTo=',
     ]
     base_url = 'http://parlament.ba'
 
     data_map = {
         'Poslanik': 'name',
         'Delegat': 'name',
-        'Broj i datum dokumenta': 'date',
+        'Broj i datum dokumenta': 'date_fake',
         'Pitanje postavljeno u pisanoj formi - subjekt i datum': 'asigned',
         'Nadležni subjekt kome je pitanje postavljeno u usmenoj formi': 'asigned',
         'Sjednica na kojoj je pitanje usmeno postavljeno nadležnom subjektu': 'session',
@@ -33,8 +33,10 @@ class QuestionsSpider(scrapy.Spider):
 
     def parse(self, response):
         questions_of = response.css(".article header h1::text").extract_first()
-        for link in response.css('.list-articles li a::attr(href)').extract():
-            yield scrapy.Request(url=self.base_url + link, callback=self.question_parser)
+        for row in response.css('.list-articles li a'):
+            link = row.css('::attr(href)').extract_first()
+            date = row.css('p.date::text').extract_first().strip()
+            yield scrapy.Request(url=self.base_url + link, callback=self.question_parser, meta={'date': date})
 
         next_page = response.css('.PagedList-skipToNext a::attr(href)').extract_first()
         print("!!---->>>>  ", next_page)
@@ -43,11 +45,13 @@ class QuestionsSpider(scrapy.Spider):
 
     def question_parser(self, response):
         table = response.css('.table-minus .table-docs')[0]
+        date = response.meta['date']
         json_data = {'ref': response.url.split('contentId=')[1].split('&')[0],
                      'links': [],
                      'url': response.url,
                      'text': '',
-                     'asigned': None}
+                     'asigned': None,
+                     'date': date}
         try:
             links = response.css('.table-minus .table-docs')[1]
             for line in links.css('tr'):
