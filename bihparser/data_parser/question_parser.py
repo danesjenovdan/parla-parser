@@ -56,7 +56,7 @@ class QuestionParser(BaseParser):
         sp = self.date.split(',')
         date = sp[-1].strip()
         self.date_f = datetime.strptime(date, "%d.%m.%Y.")
-        self.question['date'] = self.date_f.isoformat()
+        self.question['timestamp'] = self.date_f.isoformat()
 
     def parse_data(self):
         self.question['gov_id'] = self.signature

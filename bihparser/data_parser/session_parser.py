@@ -32,13 +32,14 @@ class SessionParser(BaseParser):
         logger.info('.:SESSION PARSER:.')
 
         self.storage = reference.storage
-    
+
         self.speeches = []
         cut_order = r'^\d*\. '
 
         organization = self.storage.organization_storage.get_or_add_organization(
             item['session_of'],
         )
+
         session_data = {
             "organization": organization.id,
             "mandate": self.storage.mandate_id,
@@ -46,6 +47,7 @@ class SessionParser(BaseParser):
             "in_review": False,
             "gov_id": item['gov_id'],
             "name": item['name'],
+            "classification": self.get_session_type(item['name'])
         }
         self.update = UPDATE_VOTES
         # get and set session
@@ -133,6 +135,7 @@ class SessionParser(BaseParser):
                         'organization': organization.id,
                         'procedure_phase': self.storage.default_procedure_phase,
                         'legislation': law.id,
+                        'session': session.id,
                     })
 
 
@@ -196,7 +199,7 @@ class SessionParser(BaseParser):
                         temp_ballot = {
                             'vote': vote['id'],
                             'option': ballot['option'],
-                            'voter': voter.id
+                            'personvoter': voter.id
                             }
                         ballots.append(temp_ballot)
                     session.vote_storage.set_ballots(ballots)
@@ -223,6 +226,13 @@ class SessionParser(BaseParser):
             else:
                 epas = epa[0]
         return epas
+
+    def get_session_type(self, name):
+        if 'hitra' in name:
+            return 'urgent'
+        else:
+            return 'regular'
+
 
 class get_PDF(object):
     def __init__(self, url, file_name):
