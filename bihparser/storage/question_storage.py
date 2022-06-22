@@ -23,6 +23,7 @@ class QuestionStorage(object):
         self.parladata_api = ParladataApi()
         self.questions = {}
         self.storage = core_storage
+
     def load_data(self):
         if not self.questions:
             for question in self.parladata_api.get_questions():
@@ -55,6 +56,8 @@ class QuestionStorage(object):
         return added_question
 
     def check_if_question_is_parsed(self, question):
+        if not self.questions:
+            self.load_data()
         key = Question.get_key_from_dict(question)
         return key in self.questions.keys()
 

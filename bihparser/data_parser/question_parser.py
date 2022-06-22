@@ -36,7 +36,9 @@ class QuestionParser(BaseParser):
         self.session = data.get('session', None)
 
         # prepere dictionarys for setters
-        self.question = {}
+        self.question = {
+            'type_of_question': 'question'
+        }
         self.date_f = None
 
         if self.question_storage.check_if_question_is_parsed({'gov_id': self.signature}):
