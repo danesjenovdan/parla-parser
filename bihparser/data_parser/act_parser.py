@@ -136,6 +136,7 @@ class ActParser(BaseParser):
             mdt_fk = self.add_organization(self.act['mdt'].strip(), 'commitee', create_if_not_exist=True)
             self.act['mdt_fk'] = mdt_fk
         self.act['procedure_phase'] = self.status
+        self.act['mandate_id'] = self.reference.storage.mandate_id
 
         try:
             self.act['status'] = options_map[self.status]
