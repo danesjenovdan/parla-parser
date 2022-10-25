@@ -2,7 +2,7 @@ import requests
 import logging
 
 from requests.auth import HTTPBasicAuth
-from bihparser import settings
+from parlaparser import settings
 
 import sentry_sdk
 
@@ -26,6 +26,7 @@ class ParladataApi(object):
             response = requests.get(url, auth=self.auth)
             if response.status_code != 200:
                 logger.warning(response.content)
+                logger.warning(url)
                 sentry_sdk.capture_message(f'Parladata request GET with url: {url} responed with body: {response.content}')
             data = response.json()
             yield data['results']
@@ -44,8 +45,10 @@ class ParladataApi(object):
                 json=data,
                 auth=self.auth
             )
+        print(response.status_code)
         if response.status_code > 299:
             logger.warning(response.content)
+            logger.warning(f'{self.base_url}/{endpoint}/')
             sentry_sdk.capture_message(f'Parladata request POST endpoint: {endpoint} responed with body: {response.content}')
         return response
 
@@ -57,6 +60,7 @@ class ParladataApi(object):
             )
         if response.status_code > 299:
             logger.warning(response.content)
+            logger.warning(f'{self.base_url}/{endpoint}/')
             sentry_sdk.capture_message(f'Parladata request PATCH endpoint: {endpoint} responed with body: {response.content}')
         return response
 
@@ -82,8 +86,12 @@ class ParladataApi(object):
             endpoint = 'motions'
         return self._get_objects(endpoint)
 
-    def get_agenda_items(self):
-        return self._get_objects('agenda-items')
+    def get_agenda_items(self, session=None):
+        if session:
+            endpoint = f'agenda-items?session={session}'
+        else:
+            endpoint = 'agenda-items'
+        return self._get_objects(endpoint)
 
     def get_questions(self):
         return self._get_objects('questions')
@@ -199,6 +207,9 @@ class ParladataApi(object):
 
     def set_question(self, data):
         return self._set_object('questions', data).json()
+
+    def patch_question(self, id, data):
+        return self._patch_object(f'questions/{id}', data).json()
 
     def set_link(self, data):
         return self._set_object('links', data).json()

@@ -237,6 +237,9 @@ class LegislationStorage(object):
             return
         return legislation_classifications.id
 
+    def get_legislation_status_by_name(self, name):
+        return self.legislation_statuses[name].id
+
     def prepare_and_set_legislation_consideration(self, legislation_consideration):
         epa = legislation_consideration['epa'].lower().strip()
         if epa in self.legislation.keys():

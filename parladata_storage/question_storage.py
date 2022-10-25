@@ -2,13 +2,14 @@ from parladata_storage.parladata_api import ParladataApi
 
 
 class Question(object):
-    def __init__(self, gov_id, id, is_new) -> None:
+    def __init__(self, gov_id, id, answer_timestamp,  is_new) -> None:
         self.parladata_api = ParladataApi()
 
         # question members
         self.id = id
         self.gov_id = gov_id
         self.is_new = is_new
+        self.answer_timestamp = answer_timestamp
 
     def get_key(self) -> str:
         return self.gov_id.strip().lower()
@@ -16,6 +17,11 @@ class Question(object):
     @classmethod
     def get_key_from_dict(ctl, question) -> str:
         return question['gov_id'].strip().lower()
+
+    def update_data(self, data):
+        question = self.parladata_api.patch_question(self.id, data)
+        self.answer_timestamp=question['answer_timestamp']
+        return question
 
 
 class QuestionStorage(object):
@@ -30,6 +36,7 @@ class QuestionStorage(object):
                 temp_question = Question(
                     gov_id=question['gov_id'],
                     id=question['id'],
+                    answer_timestamp=question['answer_timestamp'],
                     is_new=False,
                 )
                 self.questions[temp_question.get_key()] = temp_question
@@ -45,6 +52,7 @@ class QuestionStorage(object):
             new_question = Question(
                 gov_id=question['gov_id'],
                 id=question['id'],
+                answer_timestamp=question['answer_timestamp'],
                 is_new = True,
             )
             self.questions[new_question.get_key()] = new_question

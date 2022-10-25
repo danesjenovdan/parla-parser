@@ -5,7 +5,6 @@ from parladata_storage.legislation_storage import LegislationStorage
 from parladata_storage.question_storage import QuestionStorage
 from parladata_storage.people_storage import PeopleStorage
 from parladata_storage.organization_storage import OrganizationStorage
-from parladata_storage.agenda_item_storage import AgendaItemStorage
 
 from collections import defaultdict
 from datetime import datetime
@@ -38,7 +37,6 @@ class DataStorage(object):
         self.people_storage = PeopleStorage(self)
         self.organization_storage = OrganizationStorage(self)
         self.question_storage = QuestionStorage(self)
-        self.agenda_item_storage = AgendaItemStorage(self)
 
         api_memberships = self.parladata_api.get_memberships()
         for membership in api_memberships:

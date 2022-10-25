@@ -20,11 +20,11 @@ class AgendaItem(object):
 
 
 class AgendaItemStorage(object):
-    def __init__(self, core_storage) -> None:
+    def __init__(self, session) -> None:
         self.parladata_api = ParladataApi()
         self.agenda_items = {}
-        self.storage = core_storage
-        for agenda_item in self.parladata_api.get_agenda_items():
+        self.session = session
+        for agenda_item in self.parladata_api.get_agenda_items(session=session.id):
             self.store_agenda_item(agenda_item, is_new=False)
 
     def store_agenda_item(self, agenda_item, is_new) -> AgendaItem:
@@ -37,7 +37,7 @@ class AgendaItemStorage(object):
         self.agenda_items[temp_agenda_item.get_key()] = temp_agenda_item
         return temp_agenda_item
 
-    def get_or_add_agenda_item(self, data,) -> AgendaItem:
+    def get_or_add_agenda_item(self, data) -> AgendaItem:
         key = AgendaItem.get_key_from_dict(data)
         if key in self.agenda_items.keys():
             agenda_item = self.agenda_items[key]
