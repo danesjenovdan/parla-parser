@@ -3,6 +3,8 @@ echo "parse speeches, votes, sessions"
 scrapy crawl sessions
 scrapy crawl questions
 cd /app
+echo "start adding absent votes"
+python manage.py create_absent_ballots_for_voters
 echo "start setting votes results"
 python manage.py set_votes_result --majority relative_normal
 echo "start setting legislation results"

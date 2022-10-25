@@ -4,68 +4,101 @@ import logging
 
 from datetime import datetime
 
-
 class QuestionsSpider(scrapy.Spider):
     name = 'questions'
 
     custom_settings = {
         'ITEM_PIPELINES': {
-            'bihparser.pipelines.BihParserPipeline': 1
+            'parlaparser.pipelines.ParlaparserPipeline': 1
         }
     }
 
     start_urls = [
-        'https://parlament.ba/oQuestion/GetORQuestions?RDId=&Rep-6=&Rep-4=&MandateId=6&DateFrom=&DateTo=',
-        'https://parlament.ba/oQuestion/GetODQuestions?RDId=&Del-6=&Del-4=&MandateId=6&DateFrom=&DateTo=',
-    ]
-    base_url = 'http://parlament.ba'
+        'https://edoc.sabor.hr/ZastupnickaPitanja.aspx',
+        ]
 
-    data_map = {
-        'Poslanik': 'name',
-        'Delegat': 'name',
-        'Broj i datum dokumenta': 'date_fake',
-        'Pitanje postavljeno u pisanoj formi - subjekt i datum': 'asigned',
-        'Nadležni subjekt kome je pitanje postavljeno u usmenoj formi': 'asigned',
-        'Sjednica na kojoj je pitanje usmeno postavljeno nadležnom subjektu': 'session',
-        'Tekst pitanja (identičan usvojenom zapisniku)': 'text',
-        'Saziv': 'mandate'
-    }
+    def parse(self, response):       
+        num_pages = int(response.css("table.OptionsTable td span::text").extract()[2].strip().split(" ")[1])
 
-    def parse(self, response):
-        questions_of = response.css(".article header h1::text").extract_first()
-        for row in response.css('.list-articles li a'):
-            link = row.css('::attr(href)').extract_first()
-            date = row.css('p.date::text').extract_first().strip()
-            yield scrapy.Request(url=self.base_url + link, callback=self.question_parser, meta={'date': date})
+        # limiter
+        start_page = 1
+        #num_pages = 5
 
-        next_page = response.css('.PagedList-skipToNext a::attr(href)').extract_first()
-        print("!!---->>>>  ", next_page)
-        if next_page:
-            yield scrapy.Request(url=self.base_url + next_page, callback=self.parse)
+        for i in range(start_page, start_page + num_pages):
+            form_data = self.validate(response)
 
-    def question_parser(self, response):
-        table = response.css('.table-minus .table-docs')[0]
-        date = response.meta['date']
-        json_data = {'ref': response.url.split('contentId=')[1].split('&')[0],
-                     'links': [],
-                     'url': response.url,
-                     'text': '',
-                     'asigned': None,
-                     'date': date}
-        try:
-            links = response.css('.table-minus .table-docs')[1]
-            for line in links.css('tr'):
-                head = line.css('th::text').extract_first()
-                data = line.css('td a::attr(href)').extract_first()
-                json_data['links'].append({'name': head, 'url': data})
-        except:
-            pass
-        for line in table.css('tr'):
-            head = line.css('th::text').extract_first()
-            data = line.css('td::text').extract_first()
-            try:
-                json_data[self.data_map[head]] = data
-            except:
-                print('***\n***\n*** Define KEY:', head)
-                print('\n***\n***')
-        yield json_data
+            # This is how edoc aspx backend works. callback param need to know how much digits has number
+            special_aspx = len(str(i-1)) + 12
+            callback_param = 'c0:KV|81;["11296","11295","11294","11293","11292","11291","11290","11289","11288","11265"];GB|' + str(special_aspx) + ';8|GOTOPAGE' + str(len(str(i-1))) + '|' + str(i-1) + ';'
+
+            form_data.update({
+                'ctl00$ContentPlaceHolder$gvPitanja$PagerBarB$GotoBox': str(i),
+                '__CALLBACKID': 'ctl00$ContentPlaceHolder$gvPitanja',
+                '__CALLBACKPARAM': callback_param,
+                #'ctl00$ContentPlaceHolder$navFilter': '{&quot;selectedItemIndexPath&quot;:&quot;&quot;,&quot;groupsExpanding&quot;:&quot;0;0;0&quot;}',
+                #'ctl00$ContentPlaceHolder$rbtnTraziPo': '0',
+            })
+            yield scrapy.FormRequest(url='https://edoc.sabor.hr/ZastupnickaPitanja.aspx',
+                                     formdata=form_data,
+                                     meta={'page': str(i), 'calback': callback_param},
+                                     callback=self.parse_list,
+                                     method='POST')
+
+
+    def validate(self, response):
+        viewstate = response.css("#__VIEWSTATE::attr(value)").extract()[0]
+        viewstategen = response.css("#__VIEWSTATEGENERATOR::attr(value)").extract()[0]
+        eventvalidation = response.css("#__EVENTVALIDATION::attr(value)").extract()[0]
+        return {'__EVENTVALIDATION': eventvalidation,
+                '__VIEWSTATE': viewstate,
+                '__VIEWSTATEGENERATOR': viewstategen,
+            }
+
+
+
+
+    def parse_list(self, response):
+        # print("AGENDA")
+        items = response.css("#ctl00_ContentPlaceHolder_gvPitanja_DXMainTable>tr")[1:]
+        #logging.error(items)
+        if len(items) == 0:
+            logging.error("FAIL " + response.meta["page"] + " " + response.meta["calback"])
+        for i in items:
+            row = i.css("td>a::attr(href)").extract()
+            url = 'https://edoc.sabor.hr/' + row[4][2:-2]
+            #print(url)
+            yield scrapy.Request(url=url, callback=self.parse_question)
+
+
+    def parse_question(self, response):
+        author = response.css("#ctl00_ContentPlaceHolder_lblzastupnikValue::text").extract()
+        title = ''.join(response.css("#ctl00_ContentPlaceHolder_PitanjeFonogram *::text").extract())
+
+        ref = response.css("#ctl00_ContentPlaceHolder_lblsazivValue::text").extract()
+        date = response.css("#ctl00_ContentPlaceHolder_lbldatumPostavljanjaValue::text").extract()
+        typ = response.css("#ctl00_ContentPlaceHolder_lblnacinPostavljanjaValue::text").extract()
+        recipient = response.css("#ctl00_ContentPlaceHolder_hledokumentiPitanja::text").extract()
+        field = response.css("#ctl00_ContentPlaceHolder_lblpodrucjeValue::text").extract()
+        signature = response.css("#ctl00_ContentPlaceHolder_lblsignaturaValue::text").extract()
+
+        link = response.css("#ctl00_ContentPlaceHolder_PitanjeFonogram::attr(href)").extract()
+
+        answer = response.css("#ctl00_ContentPlaceHolder_OdgovorFonogram::attr(href)").extract()
+        answer_date = response.css("#ctl00_ContentPlaceHolder_lbldatumOdgovoraValue::text").extract()
+
+        if not answer_date:
+            if 'sjednici' in response.css("#ctl00_ContentPlaceHolder_lblnacinPostavljanjaValue::text").extract_first():
+                answer_date = date
+        yield {'author': author,
+               'title': title,
+               'ref': ref,
+               'date': date,
+               'typ': typ,
+               'recipient': recipient,
+               'field': field,
+               'signature': signature,
+               'link': link,
+               'edoc_url': response.url,
+               'answer': answer,
+               'answer_date': answer_date}
+
