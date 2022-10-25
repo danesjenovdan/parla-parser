@@ -42,7 +42,7 @@ class ActSpider(scrapy.Spider):
         data = {
             'text': title,
             'uid': uid,
-            'url': response.url
+            'url': response.url,
         }
         for line in response.css('.table-minus .table-docs tr'):
             #print(line.css('th').extract_first())

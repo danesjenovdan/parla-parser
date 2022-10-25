@@ -1,5 +1,5 @@
-from bihparser.storage.parladata_api import ParladataApi
-from bihparser.storage.vote_storage import VoteStorage
+from parladata_storage.parladata_api import ParladataApi
+from parladata_storage.vote_storage import VoteStorage
 
 
 class Session(object):

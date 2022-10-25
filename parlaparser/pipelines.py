@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 from .settings import API_AUTH
 
-from bihparser.spiders.people_spider import PeopleSpider
-from bihparser.spiders.questions_spider import QuestionsSpider
-from bihparser.spiders.act_spider import ActSpider
-from bihparser.spiders.club_spider import ClubSpider
-from bihparser.spiders.session_spider import SessionSpider
+from parlaparser.spiders.people_spider import PeopleSpider
+from parlaparser.spiders.questions_spider import QuestionsSpider
+from parlaparser.spiders.act_spider import ActSpider
+from parlaparser.spiders.club_spider import ClubSpider
+from parlaparser.spiders.session_spider import SessionSpider
 
 from datetime import datetime
 
@@ -18,7 +18,7 @@ from .data_parser.act_parser import ActParser
 from .data_parser.club_parser import ClubParser
 from .data_parser.session_parser import SessionParser
 
-from bihparser.storage.storage import DataStorage
+from parladata_storage.storage import DataStorage
 
 import logging
 logger = logging.getLogger('pipeline logger')

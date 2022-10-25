@@ -1,4 +1,4 @@
-from bihparser.storage.parladata_api import ParladataApi
+from parladata_storage.parladata_api import ParladataApi
 
 import sentry_sdk
 
