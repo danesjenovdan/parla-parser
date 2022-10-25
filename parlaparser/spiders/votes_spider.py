@@ -19,7 +19,7 @@ class VotesSpider(scrapy.Spider):
          'field_saziv_target_id':'117054'}
         print(data)
         url = 'https://www.sabor.hr/hr/views/ajax?_wrapper_format=drupal_ajax'
-        for select in response.css('[name="plenarna_id"] option')[1:2]:
+        for select in response.css('[name="plenarna_id"] option')[1:]:
             value = select.css('::attr(value)').extract_first()
             if value:
                 print(100 * '-')
