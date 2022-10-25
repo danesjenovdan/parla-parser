@@ -1,5 +1,6 @@
-from bihparser.storage.parladata_api import ParladataApi
-from bihparser.storage.vote_storage import VoteStorage
+from parladata_storage.agenda_item_storage import AgendaItemStorage
+from parladata_storage.parladata_api import ParladataApi
+from parladata_storage.vote_storage import VoteStorage
 
 
 class Session(object):
@@ -18,6 +19,7 @@ class Session(object):
 
         # session children
         self.vote_storage = None
+        self.agenda_items_storage = None
 
     def get_key(self) -> str:
         return self.gov_id.strip().lower()
@@ -35,8 +37,14 @@ class Session(object):
         self.parladata_api.unvalidate_speeches(self.id)
 
     def load_votes(self):
-        print('loading_votes')
-        self.vote_storage = VoteStorage(self)
+        print('loading votes')
+        if not self.vote_storage:
+            self.vote_storage = VoteStorage(self)
+
+    def load_agenda_items(self):
+        print('load angeda items')
+        if not self.agenda_items_storage:
+            self.agenda_items_storage = AgendaItemStorage(self)
 
     def add_speeches(self, data):
         chunks = [data[x:x+50] for x in range(0, len(data), 50)]
@@ -52,9 +60,8 @@ class Session(object):
         print(timestamp.isoformat())
         self.start_time = timestamp.isoformat()
 
-
-
 class SessionStorage(object):
+    sessionClass = Session
     def __init__(self, core_storage) -> None:
         self.parladata_api = ParladataApi()
         self.sessions = {}
@@ -62,7 +69,7 @@ class SessionStorage(object):
         self.sessions_in_review = []
         self.storage = core_storage
         for session in self.parladata_api.get_sessions():
-            temp_session = Session(
+            temp_session = self.sessionClass(
                 name=session['name'],
                 gov_id=session['gov_id'],
                 id=session['id'],
@@ -77,13 +84,13 @@ class SessionStorage(object):
                 self.sessions_in_review.append(temp_session)
 
     def add_or_get_session(self, data) -> Session:
-        key = Session.get_key_from_dict(data)
+        key = self.sessionClass.get_key_from_dict(data)
         if key in self.sessions.keys():
             return self.sessions[key]
         else:
             data.update(mandate=self.storage.mandate_id)
             session = self.parladata_api.set_session(data)
-            new_session = Session(
+            new_session = self.sessionClass(
                 name=session['name'],
                 gov_id=session['gov_id'],
                 id=session['id'],

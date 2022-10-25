@@ -1,4 +1,4 @@
-from bihparser.storage.parladata_api import ParladataApi
+from parladata_storage.parladata_api import ParladataApi
 
 import sentry_sdk
 
@@ -236,6 +236,9 @@ class LegislationStorage(object):
             print(f'name is not in loaded legislation classifications')
             return
         return legislation_classifications.id
+
+    def get_legislation_status_by_name(self, name):
+        return self.legislation_statuses[name].id
 
     def prepare_and_set_legislation_consideration(self, legislation_consideration):
         epa = legislation_consideration['epa'].lower().strip()

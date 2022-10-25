@@ -1,11 +1,10 @@
-from bihparser import settings
-from bihparser.storage.parladata_api import ParladataApi
-from bihparser.storage.session_storage import SessionStorage
-from bihparser.storage.legislation_storage import LegislationStorage
-from bihparser.storage.question_storage import QuestionStorage
-from bihparser.storage.people_storage import PeopleStorage
-from bihparser.storage.organization_storage import OrganizationStorage
-from bihparser.storage.agenda_item_storage import AgendaItemStorage
+from parlaparser import settings
+from parladata_storage.parladata_api import ParladataApi
+from parladata_storage.session_storage import SessionStorage
+from parladata_storage.legislation_storage import LegislationStorage
+from parladata_storage.question_storage import QuestionStorage
+from parladata_storage.people_storage import PeopleStorage
+from parladata_storage.organization_storage import OrganizationStorage
 
 from collections import defaultdict
 from datetime import datetime
@@ -38,7 +37,6 @@ class DataStorage(object):
         self.people_storage = PeopleStorage(self)
         self.organization_storage = OrganizationStorage(self)
         self.question_storage = QuestionStorage(self)
-        self.agenda_item_storage = AgendaItemStorage(self)
 
         api_memberships = self.parladata_api.get_memberships()
         for membership in api_memberships:
