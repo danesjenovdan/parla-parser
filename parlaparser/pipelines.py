@@ -9,22 +9,14 @@ from parlaparser.spiders.questions_spider import QuestionsSpider
 
 from datetime import datetime
 
-from .data_parser.question_parser import QuestionParser
-from .data_parser.person_parser import PersonParser
-from .data_parser.act_parser import ActParser
-from .data_parser.club_parser import ClubParser
-from .data_parser.session_parser import SessionParser
-#-----------------------------------------------
+from parlaparser.data_parser.question_parser import QuestionParser
 from parlaparser.data_parser.speech_parser import SpeechParser
 from parlaparser.data_parser.vote_parser import BallotsParser
 from parlaparser.data_parser.base_parser import HRDataStorage
 from parlaparser.data_parser.comitee_parser import ComiteeParser
 
-from parladata_storage.storage import DataStorage
-
 import logging
 logger = logging.getLogger('pipeline logger')
-
 
 
 class ParlaparserPipeline(object):
