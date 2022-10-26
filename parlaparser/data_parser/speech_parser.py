@@ -36,7 +36,6 @@ class SpeechParser(BaseParser):
             "mandate": self.storage.mandate_id,
             "organizations": [organization.id],
             "in_review": False,
-            "gov_id": gov_id,
             "name": session + ". sjednica",
             "classification": 'regular',
             'start_time': self.date.isoformat()
@@ -55,54 +54,44 @@ class SpeechParser(BaseParser):
                 "name": agenda_text.strip(),
                 "datetime": self.date.isoformat(),
                 "session": session.id,
-                "order": gov_id,
+                "order": ai_order,
                 "gov_id": gov_id
             }
             # agenda_key = AgendaItem.get_key_from_dict(agenda_json)
 
-            agenda_item = session.agenda_items_storage.get_or_add_agenda_item(agenda_json)
+            agenda_item, added = session.agenda_items_storage.get_or_add_agenda_item(agenda_json)
             self.agenda_ids.append(agenda_item.id)
-            #print(agenda_method, agenda_text.strip())
-            methods.append(agenda_item.is_new)
+            print(added, agenda_text.strip())
+            methods.append(added)
 
+        print(methods)
         # skip adding speeches if any agenda_item already exists
-        if not any(methods):
-            #print("SETTING", self.session_id)
-            for speech in speeches:
-
-                self.speaker = speech['speaker']
-                self.order = speech['order']
-                self.content = speech['content']
+        if all(methods):
+            print("SETTING", session.name)
+            for order, speech in enumerate(speeches):
                 # SPEECH
+                speaker_name, pg = self.parse_edoc_person(speech['speaker'])
+                speaker = self.storage.people_storage.get_or_add_person(speaker_name)
 
-                self.speech = {'session': session.id}
-
-                self.parse_time()
-                self.set_data()
+                speech = {
+                    'session': session.id,
+                    'order': order,
+                    'content': speech['content'],
+                    'speaker': speaker.id,
+                    'agenda_items': self.agenda_ids,
+                    'valid_from': self.date.isoformat(),
+                    'start_time': self.date.isoformat(),
+                    'valid_to': datetime.max.isoformat()
+                    }
+                self.speeches.append(speech)
             session.add_speeches(self.speeches)
-            #if response.status_code == 400:
-            #    print(response.status_code)
         elif agenda_item.is_new == None:
-            print('agenda item set failed')
+            print('SKIPPP agenda item set failed')
         else:
-            #print('this agenda item allready parsed')
-            pass
+            print('SKIPP this agenda item allready parsed')
+
 
     def parse_time(self):
         self.speech['valid_from'] = self.date.isoformat()
         self.speech['start_time'] = self.date.isoformat()
         self.speech['valid_to'] = datetime.max.isoformat()
-
-    def set_data(self):
-        self.speech['content'] = self.content
-        self.speech['order'] = self.order
-
-        self.speech['agenda_items'] = self.agenda_ids
-
-        # get and set speaket
-        speaker, pg = self.parse_edoc_person(self.speaker[0])
-        speaker = self.storage.people_storage.get_or_add_person(speaker)
-
-        self.speech['speaker'] = speaker.id
-
-        self.speeches.append(self.speech)

@@ -39,12 +39,14 @@ class AgendaItemStorage(object):
 
     def get_or_add_agenda_item(self, data) -> AgendaItem:
         key = AgendaItem.get_key_from_dict(data)
+        added = False
         if key in self.agenda_items.keys():
             agenda_item = self.agenda_items[key]
         else:
             added_agenda_item = self.parladata_api.set_agenda_item(data)
             agenda_item = self.store_agenda_item(added_agenda_item, is_new=True)
-        return agenda_item
+            added = True
+        return agenda_item, added
 
 
 

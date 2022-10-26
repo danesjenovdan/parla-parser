@@ -18,7 +18,7 @@ class ComiteeSpider(scrapy.Spider):
      'Potpredsjednici':'deputy',
      'Članovi':'member'}
 
-    def __init__(self, parse_memberships=False, parse_calendar=False, **kwargs):
+    def __init__(self, parse_memberships=False, parse_calendar=True, **kwargs):
 
         # TODO enable parsing calendar
 

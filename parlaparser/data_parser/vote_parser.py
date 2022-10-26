@@ -385,7 +385,6 @@ class BallotsParser(BaseParser):
         self.motion_data['datetime'] = time.isoformat()
         self.vote['timestamp'] = time.isoformat()
         self.act_data['timestamp'] = time.isoformat()
-        self.session['start_time'] = time.isoformat()
 
     def parse_non_balots_balots(self, data):
         opt_map = {
