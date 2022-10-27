@@ -205,15 +205,6 @@ class ComiteeParser(BaseParser):
         if not self.data['item_title']:
             return
         epa = self.find_epa_in_name(self.data['item_title'])
-        if self.all_in:
-            if self.counters:
-                voters_count = len(self.reference.commitees_members[self.org_id])
-                attended = sum(self.counters.values())
-                absent = voters_count - attended
-                self.counters['absent'] = absent
-                for option in self.options.values():
-                    if option not in self.counters.keys():
-                        self.counters[option] = 0
 
         law = self.storage.legislation_storage.get_law(epa)
         motion_data['law'] = law.id if law else None
