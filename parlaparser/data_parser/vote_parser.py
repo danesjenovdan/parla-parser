@@ -360,6 +360,19 @@ class BallotsParser(BaseParser):
 
         self.session.vote_storage.set_ballots(data)
 
+    def add_anonymous_ballots(self, vote):
+        data = []
+        for option, count in self.counters.items():
+            for i in range(count):
+                temp = {
+                    'option': option,
+                    'vote': vote,
+                    'voter': None,
+                }
+                data.append(temp)
+        self.session.vote_storage.set_ballots(data)
+
+
     def set_data(self):
         self.save_legislation()
 
@@ -368,6 +381,8 @@ class BallotsParser(BaseParser):
 
         if self.ballots:
             self.parse_ballots(self.motion.vote.id)
+        elif self.counters:
+            self.add_anonymous_ballots(self.motion.vote.id)
 
     def set_docs(self):
         if self.motion.is_new or FORCE_SET_DOCS:

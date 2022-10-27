@@ -224,7 +224,6 @@ class ComiteeParser(BaseParser):
         motion_data['gov_id'] = self.data['url'].split('//')[1]
         motion_data['session'] = self.session.id
         self.data['datetime_utc'] = None
-        #vote['counter'] = json.dumps(self.counters)
         self.session.load_votes()
         motion = self.session.vote_storage.add_or_get_motion_and_vote(
             motion_data
