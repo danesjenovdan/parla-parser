@@ -227,6 +227,9 @@ class LegislationStorage(object):
         else:
             print(f'Adding new legislation with epa:{epa}!')
             law = self.set_law(law_data)
+            if 'status' in law_data.keys() and law.status.id != law_data['status']:
+                law = self.patch_law(law, law_data)
+                print('BLA BLA BLA STATUS JE DRUGACN    ', law.status.id, law_data['status'])
         return law
 
     def get_legislation_classifications_id(self, name):

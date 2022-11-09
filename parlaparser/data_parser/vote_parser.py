@@ -129,7 +129,7 @@ class BallotsParser(BaseParser):
             if self.session.vote_storage.check_if_motion_is_parsed(self.motion_data):
                 print('motion is saved')
                 if self.is_motion_saved_without_ballots():
-                    # TODO add ballots to vote
+                    # add ballots to vote
                     self.parse_results()
                     motion_id = self.reference.motions[self.source_data['id']]
                     vote_id = self.reference.votes_without_ballots[motion_id]
@@ -137,11 +137,13 @@ class BallotsParser(BaseParser):
                 elif PARSE_JUST_NEW_VOTES:
                     print('This motion is allready parsed')
                 else:
+                    pass
                     print('Update motion')
                     self.parse_results()
                     self.set_data()
                     self.set_docs()
             else:
+                # add new vote with ballots
                 self.parse_results()
                 self.set_data()
                 self.set_docs()
@@ -152,10 +154,12 @@ class BallotsParser(BaseParser):
 
     def save_legislation(self):
         self.act_data['session'] = self.session.id
-        self.act_data['procedure_ended'] = False
-        self.act_data['status'] = self.storage.legislation_storage.get_legislation_status_by_name('in_procedure')
-        self.act_data['result'] = False
-        if 'date_to_procedure' in self.source_data.keys():
+        # set law as passed if is enacted
+        if self.act_data['status'] == self.storage.legislation_storage.get_legislation_status_by_name('enacted'):
+            self.act_data['passed'] = True
+
+        self.act_data['mandate'] = self.storage.mandate_id
+        if 'date_to_procedure' in self.source_data.keys() and self.source_data['date_to_procedure']:
             d_time = datetime.strptime(self.source_data['date_to_procedure'], '%Y-%m-%dT%H:%M:%SZ')
         elif 'time' in self.source_data.keys():
             d_time = datetime.strptime(self.source_data['time'], '%d.%m.%Y. %H:%M')
@@ -164,8 +168,8 @@ class BallotsParser(BaseParser):
         self.act_data['date'] = d_time.isoformat()
         if self.act_data['classification'] == 'act':
             self.act_data['classification'] = self.storage.legislation_storage.legislation_classifications['act'].id
-            #self.act = self.add_or_update_act(self.act_data['text'], self.act_data)
             self.act = self.storage.legislation_storage.update_or_add_law(self.act_data)
+            self.motion_data['law'] = self.act.id
         else:
             note = None
             for doc in self.docs:
@@ -175,8 +179,18 @@ class BallotsParser(BaseParser):
             if note:
                 self.act_data['note'] = ' '.join(note)
             self.act_data['classification'] = self.storage.legislation_storage.legislation_classifications['law'].id
-            #self.act = self.add_or_update_law(self.act_data['epa'], self.act_data)
             self.act = self.storage.legislation_storage.update_or_add_law(self.act_data)
+            self.motion_data['law'] = self.act.id
+        if self.act.is_new:
+            procedure = {
+                'legislation':self.act.id,
+                'session': self.session.id,
+                'timestamp': d_time.isoformat(),
+                'procedure_phase': self.storage.default_procedure_phase,
+                'organization': self.storage.main_org_id
+
+            }
+            self.storage.legislation_storage.set_legislation_consideration(procedure)
 
     def is_motion_saved(self):
         print('IS SAVED:  ', self.source_data['id'] in self.reference.motions.keys())
@@ -241,9 +255,9 @@ class BallotsParser(BaseParser):
             self.motion_data['result'] = self.result
             if self.result:
                 if self.act_data['procedure'] in ['drugo čitanje', 'hitni postupak']:
-                    self.act_data['result'] = self.act_result_options[int(self.result)]
+                    self.act_data['status'] = self.get_act_result_id(int(self.result))
                 else:
-                    self.act_data['result'] = self.act_result_options[0 if int(self.result) == 0 else 2]
+                    self.act_data['status'] = self.get_act_result_id(0 if int(self.result) == 0 else 2)
             print(self.counters, 'result:', self.result)
 
     def find_result(self, text):
@@ -275,17 +289,20 @@ class BallotsParser(BaseParser):
             if word in text:
                 return '1'
 
+    def get_act_result_id(self, idx):
+        option = self.act_result_options[int(idx)]
+        return self.storage.legislation_storage.get_legislation_status_by_name(option)
+
     def parse_results(self):
         if self.source_data['for_count'] > self.source_data['against_count']:
             self.vote['result'] = 1
             self.motion_data['result'] = 1
-            self.act_data['result'] = self.act_result_options[1]
+            self.act_data['status'] = self.get_act_result_id(1)
         else:
             self.vote['result'] = 0
             self.motion_data['result'] = 0
-            self.act_data['result'] = self.act_result_options[0]
+            self.act_data['status'] = self.get_act_result_id(0)
         self.act_data['procedure_phase'] = self.act_data['result']
-        self.act_data['status'] = self.storage.legislation_storage.get_legislation_status_by_name(self.act_data['result'])
 
     def parse_time(self):
         self.time_f = datetime.strptime(self.time, '%d.%m.%Y. %H:%M')
@@ -313,13 +330,11 @@ class BallotsParser(BaseParser):
                 text = text.split(', hitni postupak')[0]
                 self.act_result_options = ('rejected', 'enacted', 'adopted')
                 self.act_data['procedure'] = 'hitni postupak'
-                self.act_data['procedure_ended'] = True
             else:
                 if ', drugo čitanje' in text:
                     text = text.split(', drugo čitanje')[0]
                     self.act_result_options = ('rejected', 'enacted')
                     self.act_data['procedure'] = 'drugo čitanje'
-                    self.act_data['procedure_ended'] = True
                 else:
                     if ', prvo čitanje' in text:
                         text = text.split(', prvo čitanje')[0]
@@ -338,9 +353,8 @@ class BallotsParser(BaseParser):
                     self.act_data['text'] = text.split('- predlagatelj')[0].strip()
                 else:
                     self.act_data['text'] = text.strip()
-            self.act_data['procedure_ended'] = True
             self.act_data['procedure'] = 'act'
-        self.act_result_options = ('rejected', 'enacted', 'adopted')
+            self.act_result_options = ('rejected', 'enacted', 'adopted')
 
     def parse_ballots(self, vote):
         option_map = {
