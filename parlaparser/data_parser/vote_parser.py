@@ -177,7 +177,7 @@ class BallotsParser(BaseParser):
                     note = ContentParser(doc).parse()
 
             if note:
-                self.act_data['note'] = ' '.join(note)
+                self.act_data['abstract'] = ' '.join(note)
             self.act_data['classification'] = self.storage.legislation_storage.legislation_classifications['law'].id
             self.act = self.storage.legislation_storage.update_or_add_law(self.act_data)
             self.motion_data['law'] = self.act.id
