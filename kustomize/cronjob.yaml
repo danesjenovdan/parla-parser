@@ -26,9 +26,9 @@ spec:
                   name: parlaparser-credentials
             resources:
               requests:
-                memory: 1500m
+                memory: 1500Mi
                 cpu: 800m
               limits:
-                memory: 1500m
+                memory: 1500Mi
                 cpu: 800m
           restartPolicy: Never
