@@ -20,9 +20,9 @@ class SpeechSpider(scrapy.Spider):
     def parse(self, response):
         num_pages = int(response.css("table.OptionsTable td span::text").extract()[2].strip().split(" ")[1])
 
-        # limiter
+        # optimization limiter
         start_page = 1
-        #num_pages = 30
+        num_pages = 5
 
         for i in range(start_page, start_page + num_pages):
             form_data = self.validate(response)
