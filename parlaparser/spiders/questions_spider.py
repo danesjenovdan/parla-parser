@@ -22,7 +22,7 @@ class QuestionsSpider(scrapy.Spider):
 
         # limiter
         start_page = 1
-        #num_pages = 5
+        num_pages = 10
 
         for i in range(start_page, start_page + num_pages):
             form_data = self.validate(response)

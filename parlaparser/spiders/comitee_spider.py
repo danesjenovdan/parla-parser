@@ -90,7 +90,7 @@ class ComiteeSpider(scrapy.Spider):
     def parse_wb_ajax_reponse(self, response):
         j_data = json.loads(response.css('textarea::text').extract_first())
         my_response = scrapy.selector.Selector(text=(j_data[(len(j_data) - 1)]['data'].strip()))
-        for session in my_response.css('.item-list'):
+        for session in my_response.css('.item-list')[:3]: # limit parse just last 2 sessions
             session_name = session.css('h3::text').extract_first()
             for doc in session.css('li a'):
                 link = doc.css('::attr(href)').extract_first()
@@ -103,8 +103,8 @@ class ComiteeSpider(scrapy.Spider):
                         vote_url = 'https://sabor.hr' + link.strip()
                     yield scrapy.Request(
                         url=vote_url,
-                        meta={'session_name':session_name.split('-')[0].strip(), 
-                        'date':session_name.split('-')[1].strip(), 
+                        meta={'session_name':session_name.split('-')[0].strip(),
+                        'date':session_name.split('-')[1].strip(),
                         'wb_name':response.meta['wb_name']},
                         callback=(self.parse_wb_vote),
                         priority=2)
