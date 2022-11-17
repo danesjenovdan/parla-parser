@@ -93,7 +93,7 @@ class SpeechSpider(scrapy.Spider):
                 if line.css('.specialContentContainer'):
                     continue
                 content = '\n'.join(map(str.strip, line.css(".singleContent dd::text").extract()))
-                speaker = line.css(".speaker h2::text").extract()
+                speaker = line.css(".speaker h2::text").extract_first()
                 order += 1
                 speeches.append({
                     'order': order,

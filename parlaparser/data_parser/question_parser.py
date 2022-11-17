@@ -49,7 +49,9 @@ class QuestionParser(BaseParser):
             self.answer = None
 
         # prepere dictionarys for setters
-        self.question = {'gov_id': self.signature}
+        self.question = {
+            'gov_id': self.signature,
+            'type': 'question'}
         self.link = {}
         self.date_f = None
 
@@ -69,7 +71,7 @@ class QuestionParser(BaseParser):
 
     def parse_time(self):
         self.date_f = datetime.strptime(self.date, "%d.%m.%Y.")
-        self.question['date'] = self.date_f.isoformat()
+        self.question['timestamp'] = self.date_f.isoformat()
         self.link['date'] = self.date_f.strftime("%Y-%m-%d")
 
     def parse_data(self, update=False):
@@ -106,7 +108,8 @@ class QuestionParser(BaseParser):
         self.question['person_authors'] = author_ids
         self.question['organization_authors'] = author_org_ids
         self.question['recipient_people'] = [recipient.id]
-        self.question['recipient_organizations'] = [recipient_party_id]
+        if recipient_party_id:
+            self.question['recipient_organizations'] = [recipient_party_id]
         self.question['recipient_text'] = self.recipient
 
         # send question

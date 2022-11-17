@@ -48,7 +48,6 @@ class BaseParser(object):
         self.reference = reference
 
     def parse_edoc_person(self, data):
-        data = data[0]
         splited = data.split('(')
         name = splited[0]
         if len(splited) > 1:
