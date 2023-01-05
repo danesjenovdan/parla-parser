@@ -522,7 +522,7 @@ class VotesParser(get_PDF):
                     current_vote['count']['against'] = int(line[-5:].strip())
                 if line.startswith('SUZDRŽAN'):
                     current_vote['count']['abstain'] = int(line[-5:].strip())
-                if line[0].isdigit():
+                if line and line[0].isdigit():
                     # parse ballot
                     #logger.debug(re.match(r'(\d{1,2})\. (\d{1,2})\. (\d{4})\.', line))
                     if line.split(' ')[0].endswith('.') and not bool(re.match(r'(\d{1,2})\. (\d{1,2})\. (\d{4})', line)):
