@@ -432,7 +432,7 @@ class VotesParser(get_PDF):
             logger.debug(self.state)
             #logger.debug(self.state, self.num_of_lines, self.found_keyword)
             line = line.strip()
-            if re.split("\s\s+", line.strip()) == ['ZA', 'PROTIV', 'SUZDRŽAN NIJE PRISUTAN', 'UKUPNO']:
+            if re.split("\s\s+", line.strip()) == ['ZA', 'PROTIV', 'SUZDRŽAN NIJE PRISUTAN', 'UKUPNO'] or re.split("\s\s+", line.strip()) == ['ZA', 'PROTIV', 'SUZDRŽAN', 'NIJE PRISUTAN', 'UKUPNO']:
                 logger.debug("\n New VOTE \n")
                 self.state = 'start'
                 current_vote['name'] = ' '.join(current_vote['name'])
