@@ -688,7 +688,9 @@ class VotesParserPeople(get_PDF):
                     pass
                 else:
                     # parse ballot
-                    current_vote['ballots'].append(self.parse_ballot(line))
+                    ballot = self.parse_ballot(line)
+                    if ballot:
+                        current_vote['ballots'].append(ballot)
 
     def parse_ballot(self, line):
         try:
