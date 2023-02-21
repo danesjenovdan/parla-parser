@@ -628,7 +628,12 @@ class VotesParserPeople(get_PDF):
 
             elif self.state == 'date':
                 logger.debug('date')
-                current_vote['start_time'] = datetime.strptime(line, API_DATE_FORMAT + ' %H:%M:%S')
+                try:
+                    current_vote['start_time'] = datetime.strptime(line, API_DATE_FORMAT + ' %H:%M:%S')
+                except Exception as e:
+                    print(e)
+                    print(line)
+                    continue
                 self.state = 'agenda'
                 continue
 
