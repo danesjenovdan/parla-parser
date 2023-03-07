@@ -51,7 +51,7 @@ class QuestionParser(BaseParser):
         # prepere dictionarys for setters
         self.question = {
             'gov_id': self.signature,
-            'type': 'question'}
+            'type_of_question': 'question'}
         self.link = {}
         self.date_f = None
 
