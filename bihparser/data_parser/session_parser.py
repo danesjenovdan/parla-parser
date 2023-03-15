@@ -702,4 +702,5 @@ class VotesParserPeople(get_PDF):
             name, temp2, option = re.split("\s\s+", line)
         except:
             print(line)
+            return {}
         return {'name': name, 'option': self.VOTE_MAP[option]}
