@@ -249,24 +249,33 @@ class get_PDF(object):
 
 class LegislationParser(get_PDF):
     def __init__(self, obj):
+        logger.debug('init')
         super().__init__(obj['url'], obj['file_name'])
-        response = requests.get(obj['url'])
+        #response = requests.get(obj['url'])
+
+        logger.debug(self.pdf)
+        logger.debug('pdf')
 
         content = "".join(self.pdf)
+        logger.debug(content)
         self.content = content.replace('\uf0b7', '').split('\n')
         self.state = 'meta'
         self.legislation = []
 
         self.rejected_words = ['ODBIJEN PRIJEDLOG ZAKONA', 'NIJE USVOJEN PRIJEDLOG ZAKONA']
-        self.in_procedure_words = ['PRIJEDLOG ZAKONA UPUĆEN']
+        self.in_procedure_words = ['PRIJEDLOG ZAKONA', 'UPUĆEN']
         self.adopted_enacted_words = ['USVOJEN ZAKON', 'USVOJEN PRIJEDLOG ZAKONA']
 
         self.skip_table_row_if_contains = ['DELEGATSKA INICIJATIVA', 'IZVJEŠTAJ', 'SAGLASNOST', 'ZNANJU INFORMACIJA']
 
         self.legislation = self.parse()
+        logger.debug(self.legislation)
 
     def if_string_contains_any(self, input_string, substrings):
         return any(substring in input_string for substring in substrings)
+    
+    def if_string_contains_all(self, input_string, substrings):
+        return all(substring in input_string for substring in substrings)
 
     def get_results(self, house):
         find_epa = r'[- 0-9,]*\d{3}\/\d{2}'
@@ -276,12 +285,13 @@ class LegislationParser(get_PDF):
         for law in self.legislation:
             epa = re.findall(find_epa, law['text'])
             if self.if_string_contains_any(law['result'], self.skip_table_row_if_contains):
+                logger.debug('skip reason:  DELEGATSKA INICIJATIVA IZVJEŠTAJ SAGLASNOST ZNANJU INFORMACIJA')
                 continue
             if epa and 'zakon' in law['text'].lower():
                 result = ''
                 if self.if_string_contains_any(law['result'], self.rejected_words):
                     result = 'rejected'
-                elif self.if_string_contains_any(law['result'], self.in_procedure_words):
+                elif self.if_string_contains_all(law['result'], self.in_procedure_words):
                     result = 'in_procedure'
                 elif self.if_string_contains_any(law['result'], self.adopted_enacted_words):
                     if house == 'Dom naroda':
@@ -294,6 +304,7 @@ class LegislationParser(get_PDF):
                         result = 'in_procedure'
                 else:
                     # IF theres unknown result text then dont add it to output
+                    logger.debug('skip IF theres unknown result text then dont add it to output')
                     continue
                 output.append({
                     'epa': epa[0].replace(' ', ''),
@@ -700,7 +711,8 @@ class VotesParserPeople(get_PDF):
     def parse_ballot(self, line):
         try:
             name, temp2, option = re.split("\s\s+", line)
-        except:
+        except Exception as e:
             print(line)
+            print(e)
             return {}
         return {'name': name, 'option': self.VOTE_MAP[option]}
