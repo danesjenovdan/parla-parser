@@ -1,9 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: parlameter-hrvaska
+namespace: parlaparser-medvode
 resources:
   - cronjob.yaml
 images:
-  - name: parlaparser-hrvaska
-    newName: rg.fr-par.scw.cloud/djnd/parlaparser-hrvaska
-    newTag: 'a14fd1e1e71160c8174becb571dfc0787a11b3c8'
+  - name: parlaparser-medvode
+    newName: rg.fr-par.scw.cloud/djnd/parlaparser-medvode
+    newTag: 'latest'
