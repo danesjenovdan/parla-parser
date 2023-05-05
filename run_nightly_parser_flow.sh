@@ -11,9 +11,7 @@ echo "update speeches to solr"
 python manage.py upload_speeches_to_solr
 echo "update votes to solr"
 python manage.py upload_votes_to_solr
-
 echo "update agenda-items to solr"
 python manage.py upload_agenda_items_to_solr
-
 echo "send notifications"
 python manage.py send_daily_notifications
