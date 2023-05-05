@@ -17,13 +17,15 @@ spec:
             env:
               - name: DJANGO_SETTINGS_MODULE
                 value: parladata_project.settings.k8s
-              - name: PARSER_MANDATE_START_DATE
-                value: '2018-12-01'
+              # empty parser needs just paraldata credentials
+              #- name: PARSER_MANDATE_START_DATE
+              #  value: '2018-12-01'
             envFrom:
               - secretRef:
                   name: parladata-credentials
-              - secretRef:
-                  name: parlaparser-credentials
+              # empty parser needs just paraldata credentials
+              #- secretRef:
+              #    name: parlaparser-credentials
             resources:
               requests:
                 memory: 1500Mi
