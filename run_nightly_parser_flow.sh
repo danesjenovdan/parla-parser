@@ -1,4 +1,5 @@
 #!/bin/bash
+cd /app
 echo "lematize speeches"
 python manage.py lemmatize_speeches
 echo "set tfidf"
