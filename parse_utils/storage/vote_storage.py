@@ -1,4 +1,4 @@
-from parlaparser.utils.parladata_api import ParladataApi
+from parse_utils.parladata_api import ParladataApi
 
 
 # class Vote(object):
@@ -20,7 +20,7 @@ from parlaparser.utils.parladata_api import ParladataApi
 #         return (data['name']).strip().lower()
 
 class Motion(object):
-    def __init__(self, id, text, session, datetime, gov_id, is_new) -> None:
+    def __init__(self, id, text, session, datetime, gov_id, is_new, motion_keys=('gov_id',)) -> None:
         self.id = id
         #self.epa = epa
         self.text = text
@@ -28,20 +28,24 @@ class Motion(object):
         self.datetime = datetime
         self.gov_id = gov_id
         self.is_new = is_new
+        self.keys = motion_keys
 
     def get_key(self) -> str:
-        return (self.gov_id if self.gov_id else '').strip().lower()
+        key = '_'.join([getattr(self, key) for key in self.keys])
+        return (key if key else '').strip().lower()
 
     @classmethod
-    def get_key_from_dict(ctl, data) -> str:
-        return (data['gov_id'] if data['gov_id'] else '').strip().lower()
+    def get_key_from_dict(ctl, data, keys) -> str:
+        key = '_'.join([data.get(key, '') for key in keys])
+        return key.strip().lower()
 
 class VoteStorage(object):
-    def __init__(self, session) -> None:
+    def __init__(self, session, motion_keys=('gov_id',)) -> None:
         self.parladata_api = ParladataApi()
         self.motions = {}
 
         self.session = session
+        self.motion_keys = motion_keys
 
         for motion in self.parladata_api.get_motions(session=session.id):
             temp_motion =Motion(
@@ -51,6 +55,7 @@ class VoteStorage(object):
                 gov_id=motion['gov_id'],
                 datetime = motion['datetime'],
                 is_new=False,
+                motion_keys=self.motion_keys
             )
             self.motions[temp_motion.get_key()] = temp_motion
 
@@ -73,6 +78,7 @@ class VoteStorage(object):
             gov_id=added_motion['gov_id'],
             datetime = added_motion['datetime'],
             is_new=False,
+            motion_keys=self.motion_keys
         )
         self.motions[motion.get_key()] = motion
         return motion
@@ -81,7 +87,7 @@ class VoteStorage(object):
         self.parladata_api.patch_motion(motion.id, data)
 
     def check_if_motion_is_parsed(self, motion):
-        key = Motion.get_key_from_dict(motion)
+        key = Motion.get_key_from_dict(motion, self.motion_keys)
         return key in self.motions.keys()
 
 

@@ -1,12 +1,13 @@
 from parlaparser import settings
-from parlaparser.utils.parladata_api import ParladataApi
-from parlaparser.utils.storage.session_storage import SessionStorage
-from parlaparser.utils.storage.legislation_storage import LegislationStorage
-from parlaparser.utils.storage.question_storage import QuestionStorage
-from parlaparser.utils.storage.people_storage import PeopleStorage
-from parlaparser.utils.storage.organization_storage import OrganizationStorage
-from parlaparser.utils.storage.agenda_item_storage import AgendaItemStorage
-from parlaparser.utils.storage.membership_storage import MembershipStorage
+from parse_utils.parladata_api import ParladataApi
+from parse_utils.storage.session_storage import SessionStorage
+from parse_utils.storage.legislation_storage import LegislationStorage
+from parse_utils.storage.question_storage import QuestionStorage
+from parse_utils.storage.public_question_storage import PublicQuestionStorage
+from parse_utils.storage.people_storage import PeopleStorage
+from parse_utils.storage.organization_storage import OrganizationStorage
+from parse_utils.storage.agenda_item_storage import AgendaItemStorage
+from parse_utils.storage.membership_storage import MembershipStorage
 
 from collections import defaultdict
 from datetime import datetime
@@ -32,13 +33,19 @@ class DataStorage(object):
         logging.warning(f'Start loading data')
         self.parladata_api = ParladataApi()
 
-        self.session_storage = SessionStorage(self)
+        self.session_storage = SessionStorage(
+            self,
+            motion_keys=('text', 'datetime')
+        )
         self.legislation_storage = LegislationStorage(self)
         self.people_storage = PeopleStorage(self)
         self.organization_storage = OrganizationStorage(self)
         self.question_storage = QuestionStorage(self)
+        self.public_question_storage = PublicQuestionStorage(self)
         self.agenda_item_storage = AgendaItemStorage(self)
         self.membership_storage = MembershipStorage(self)
+
+
 
     # area
     def set_area(self, data):

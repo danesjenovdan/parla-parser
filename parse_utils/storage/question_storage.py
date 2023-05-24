@@ -1,5 +1,5 @@
-from parlaparser.utils.parladata_api import ParladataApi
-from parlaparser.utils.storage.vote_storage import VoteStorage
+from parse_utils.parladata_api import ParladataApi
+from parse_utils.storage.vote_storage import VoteStorage
 
 
 class Question(object):
@@ -26,7 +26,7 @@ class QuestionStorage(object):
         self.storage = core_storage
     def load_data(self):
         if not self.questions:
-            for question in self.parladata_api.get_questions():
+            for question in self.parladata_api.get_questions(mandate_id=self.storage.mandate_id):
                 temp_question = Question(
                     gov_id=question['gov_id'],
                     id=question['id'],

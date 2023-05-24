@@ -1,4 +1,4 @@
-from parlaparser.utils.parladata_api import ParladataApi
+from parse_utils.parladata_api import ParladataApi
 
 import sentry_sdk
 

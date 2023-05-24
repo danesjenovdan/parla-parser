@@ -1,11 +1,20 @@
-from parlaparser.utils.parladata_api import ParladataApi
-from parlaparser.utils.storage.vote_storage import VoteStorage
+from parse_utils.parladata_api import ParladataApi
+from parse_utils.storage.vote_storage import VoteStorage
 
 from parlaparser.settings import MANDATE
 
 
 class Session(object):
-    def __init__(self, name, gov_id, id, organizations, start_time, is_new, in_review) -> None:
+    def __init__(
+            self,
+            name,
+            gov_id,
+            id,
+            organizations,
+            start_time,
+            is_new,
+            in_review,
+            motion_keys=('gov_id',)) -> None:
         self.parladata_api = ParladataApi()
 
         # session members
@@ -20,6 +29,9 @@ class Session(object):
 
         # session children
         self.vote_storage = None
+
+        # objects custom keys
+        self.motion_keys = motion_keys
 
     def get_key(self) -> str:
         if not self.gov_id:
@@ -41,7 +53,7 @@ class Session(object):
 
     def load_votes(self):
         print('loading_votes')
-        self.vote_storage = VoteStorage(self)
+        self.vote_storage = VoteStorage(self, self.motion_keys)
 
     def add_speeches(self, data):
         chunks = [data[x:x+50] for x in range(0, len(data), 50)]
@@ -60,12 +72,13 @@ class Session(object):
 
 
 class SessionStorage(object):
-    def __init__(self, core_storage) -> None:
+    def __init__(self, core_storage, motion_keys) -> None:
         self.parladata_api = ParladataApi()
         self.sessions = {}
         self.dz_sessions_by_names = {}
         self.sessions_in_review = []
         self.storage = core_storage
+        self.motion_keys = motion_keys
 
     def load_data(self):
         for session in self.parladata_api.get_sessions(mandate_id=MANDATE):
@@ -76,7 +89,8 @@ class SessionStorage(object):
                 organizations = session['organizations'],
                 start_time = session['start_time'],
                 is_new=False,
-                in_review=session['in_review']
+                in_review=session['in_review'],
+                motion_keys=self.motion_keys
             )
             self.sessions[temp_session.get_key()] = temp_session
             self.dz_sessions_by_names[session['name'].lower()] = temp_session
@@ -98,6 +112,7 @@ class SessionStorage(object):
                 start_time = session['start_time'],
                 is_new = True,
                 in_review = session['in_review'],
+                motion_keys=self.motion_keys
             )
             self.sessions[new_session.get_key()] = new_session
 

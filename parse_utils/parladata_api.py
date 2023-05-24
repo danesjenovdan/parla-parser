@@ -33,6 +33,14 @@ class ParladataApi(object):
 
     def _get_objects(self, endpoint, limit=300, *args, **kwargs):
         url = f'{self.base_url}/{endpoint}'
+
+        args = '&'.join([f'{key}={value}' for key, value in kwargs.items()])
+        if args:
+            if '?' in url:
+                url = url + '&'+ args
+            else:
+                url = url + '?'+ args
+
         return [
             obj
             for page in self._get_data_from_pager_api_gen(url, limit)
@@ -90,8 +98,14 @@ class ParladataApi(object):
     def get_agenda_items(self):
         return self._get_objects('agenda-items')
 
-    def get_questions(self):
-        return self._get_objects('questions')
+    def get_questions(self, **kwargs):
+        return self._get_objects('questions', **kwargs)
+
+    def get_public_questions(self, **kwargs):
+        return self._get_objects('public-person-questions', **kwargs)
+
+    def get_public_answers(self, **kwargs):
+        return self._get_objects('public-person-answers', **kwargs)
 
     def get_legislation(self):
         return self._get_objects('legislation')
@@ -206,6 +220,12 @@ class ParladataApi(object):
 
     def set_question(self, data):
         return self._set_object('questions', data).json()
+
+    def set_public_question(self, data):
+        return self._set_object('public-person-questions', data).json()
+
+    def set_public_answer(self, data):
+        return self._set_object('public-person-answers', data).json()
 
     def set_link(self, data):
         return self._set_object('links', data).json()
