@@ -12,8 +12,8 @@ from datetime import datetime
 
 BOT_NAME = 'bihparser'
 
-SPIDER_MODULES = ['bihparser.spiders']
-NEWSPIDER_MODULE = 'bihparser.spiders'
+SPIDER_MODULES = ['parlaparser.spiders']
+NEWSPIDER_MODULE = 'parlaparser.spiders'
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent

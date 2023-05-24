@@ -8,7 +8,7 @@ class ActSpider(scrapy.Spider):
     name = 'acts'
     custom_settings = {
         'ITEM_PIPELINES': {
-            'bihparser.pipelines.BihParserPipeline': 1
+            'parlaparser.pipelines.BihParserPipeline': 1
         }
     }
 
