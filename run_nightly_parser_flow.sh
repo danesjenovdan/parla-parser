@@ -2,6 +2,7 @@
 echo "parse speeches, votes, sessions"
 scrapy crawl sessions
 scrapy crawl questions
+scrapy crawl javnarasprava
 cd /app
 echo "start setting votes results"
 python manage.py set_votes_result --majority relative_normal
