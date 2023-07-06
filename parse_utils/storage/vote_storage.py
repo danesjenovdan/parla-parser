@@ -1,4 +1,5 @@
 from parse_utils.parladata_api import ParladataApi
+from slugify import slugify
 
 
 # class Vote(object):
@@ -32,12 +33,12 @@ class Motion(object):
 
     def get_key(self) -> str:
         key = '_'.join([getattr(self, key) for key in self.keys])
-        return (key if key else '').strip().lower()
+        return slugify((key if key else '').strip().lower())
 
     @classmethod
     def get_key_from_dict(ctl, data, keys) -> str:
         key = '_'.join([data.get(key, '') for key in keys])
-        return key.strip().lower()
+        return slugify(key.strip().lower())
 
 class VoteStorage(object):
     def __init__(self, session, motion_keys=('gov_id',)) -> None:
