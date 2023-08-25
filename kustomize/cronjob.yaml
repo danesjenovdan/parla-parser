@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: parlameter-update-flow
 spec:
-  schedule: "15 2 * * *"
+  schedule: "45 2 * * *"
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 2
   jobTemplate:
@@ -13,7 +13,7 @@ spec:
         spec:
           containers:
           - name: run-parser-flow
-            image: parlaparser-medvode
+            image: parlaparser-hrastnik:latest
             env:
               - name: DJANGO_SETTINGS_MODULE
                 value: parladata_project.settings.k8s
