@@ -6,4 +6,4 @@ resources:
 images:
   - name: parlaparser-hrvaska
     newName: rg.fr-par.scw.cloud/djnd/parlaparser-hrvaska
-    newTag: 'cc8ad8d101280a8f044ef3a389608f726578778c'
+    newTag: '920c6a129bb7b12f4aeb444cb674f77ae870da96'
