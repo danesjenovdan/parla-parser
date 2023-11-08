@@ -12,3 +12,4 @@ requests==2.27.1
 pyopenssl==22.0.0
 cryptography==38.0.4
 python-slugify
+Twisted==22.10.0
