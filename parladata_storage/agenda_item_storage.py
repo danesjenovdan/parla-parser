@@ -2,21 +2,22 @@ from parladata_storage.parladata_api import ParladataApi
 
 
 class AgendaItem(object):
-    def __init__(self, name, id, datetime, is_new) -> None:
+    def __init__(self, name, id, datetime, session, is_new) -> None:
         self.parladata_api = ParladataApi()
 
         # session members
         self.id = id
         self.name = name
+        self.session = session
         self.datetime = datetime
         self.is_new = is_new
 
     def get_key(self) -> str:
-        return (self.name + '_' + self.datetime).strip().lower()
+        return (f'{self.name}_{self.session.id}').strip().lower()
 
     @classmethod
     def get_key_from_dict(ctl, agenda_item) -> str:
-        return (agenda_item['name'] + '_' + agenda_item['datetime']).strip().lower()
+        return (f"{agenda_item['name']} {agenda_item['session'].id}").strip().lower()
 
 
 class AgendaItemStorage(object):
@@ -32,6 +33,7 @@ class AgendaItemStorage(object):
             name=agenda_item['name'],
             datetime = agenda_item['datetime'],
             id=agenda_item['id'],
+            session=self.session,
             is_new=is_new,
         )
         self.agenda_items[temp_agenda_item.get_key()] = temp_agenda_item
