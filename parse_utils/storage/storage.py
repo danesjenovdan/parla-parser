@@ -35,7 +35,7 @@ class DataStorage(object):
 
         self.session_storage = SessionStorage(
             self,
-            motion_keys=('text', 'datetime')
+            motion_keys=('datetime',)
         )
         self.legislation_storage = LegislationStorage(self)
         self.people_storage = PeopleStorage(self)
