@@ -32,7 +32,7 @@ class QuestionStorage(object):
 
     def load_data(self):
         if not self.questions:
-            for question in self.parladata_api.get_questions():
+            for question in self.parladata_api.get_questions(self.storage.mandate_id):
                 temp_question = Question(
                     gov_id=question['gov_id'],
                     id=question['id'],
