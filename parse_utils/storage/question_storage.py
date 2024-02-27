@@ -35,7 +35,7 @@ class QuestionStorage(object):
                 self.questions[temp_question.get_key()] = temp_question
             print(f'laoded was {len(self.questions)} questions')
 
-    def add_or_get_session(self, data) -> Question:
+    def add_or_get_question(self, data) -> Question:
         key = Question.get_key_from_dict(data)
         if key in self.questions.keys():
             return self.questions[key]

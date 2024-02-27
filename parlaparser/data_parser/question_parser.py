@@ -37,7 +37,8 @@ class QuestionParser(BaseParser):
 
         # prepere dictionarys for setters
         self.question = {
-            'type_of_question': 'question'
+            'type_of_question': 'question',
+            'mandate': self.reference.mandate_id,
         }
         self.date_f = None
 
