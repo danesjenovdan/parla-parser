@@ -3,7 +3,7 @@ echo "parse speeches, votes, sessions"
 scrapy crawl votes
 scrapy crawl questions
 scrapy crawl speeches
-scrapy crawl comitee
+# scrapy crawl comitee
 cd /app
 echo "start adding absent votes"
 python manage.py create_absent_ballots_for_voters
