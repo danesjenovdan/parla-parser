@@ -17,7 +17,7 @@ class AgendaItem(object):
 
     @classmethod
     def get_key_from_dict(ctl, agenda_item) -> str:
-        return (f"{agenda_item['name']} {agenda_item['session']}").strip().lower()
+        return (f"{agenda_item['name']}_{agenda_item['session']}").strip().lower()
 
 
 class AgendaItemStorage(object):
