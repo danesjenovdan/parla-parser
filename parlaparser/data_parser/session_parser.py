@@ -332,12 +332,16 @@ class LegislationParser(get_PDF):
                 # new line
                 if re.findall(start_of_agenda_no, line):
                     # new agenda item
-                    line_columns = re.split("\s\s+", re.split("^\d+. ", line)[1])
+
+                    # append previous
                     if text and result:
                         agenda_items.append({
                             'text': ' '.join(text),
                             'result': ' '.join(result)
                         })
+
+                    line_columns = re.split("\s\s+", re.split("^\d+. ", line)[1])
+                    line_columns = [x for x in line_columns if x]
                     leading_spaces = len(line)-len(line.lstrip())
                     if len(line_columns) == 1:
                         if leading_spaces > 10:
