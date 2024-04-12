@@ -27,6 +27,7 @@ class DataStorage(object):
     mandate_start_time = settings.MANDATE_STARTIME
     mandate_id = settings.MANDATE
     main_org_id = settings.MAIN_ORG_ID
+    default_procedure_phase = 1
     # old end
 
     def __init__(self):
