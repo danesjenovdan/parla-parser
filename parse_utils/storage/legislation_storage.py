@@ -240,12 +240,6 @@ class LegislationStorage(object):
         return self.legislation_statuses[name].id
 
     def prepare_and_set_legislation_consideration(self, legislation_consideration):
-        phase_key = ProcedurePhase.get_key_from_dict({'name': legislation_consideration.pop('consideration_phase')})
-        procedure_phase = self.procedure_phases.get(phase_key, None)
-        if not procedure_phase:
-            sentry_sdk.capture_message(f'There is new procedure phase {phase_key}')
-            return
-
         legislation_consideration_key = LegislationConsiceration.get_key_from_dict(legislation_consideration)
         if not legislation_consideration_key in self.legislation_considerations.keys():
             legislation_consideration = self.set_legislation_consideration(
