@@ -77,11 +77,11 @@ class LegislationConsiceration(object):
         self.is_new = is_new
 
     def get_key(self) -> str:
-        return f'{self.timestamp}_{self.law.id}_{self.procedure_phase.id}'
+        return f'{self.law.id}_{self.session}'
 
     @classmethod
     def get_key_from_dict(ctl, data) -> str:
-        return f'{data["timestamp"]}_{data["legislation"]}_{data["procedure_phase"]}'
+        return f'{data["legislation"]}_{data["session"]}'
 
 
 class LegislationStorage(object):
@@ -240,36 +240,17 @@ class LegislationStorage(object):
         return self.legislation_statuses[name].id
 
     def prepare_and_set_legislation_consideration(self, legislation_consideration):
-        epa = legislation_consideration['epa'].lower().strip()
-        if epa in self.legislation.keys():
-            law = self.legislation[epa]
-            phase_key = ProcedurePhase.get_key_from_dict({'name': legislation_consideration.pop('consideration_phase')})
-            procedure_phase = self.procedure_phases.get(phase_key, None)
-            if not procedure_phase:
-                sentry_sdk.capture_message(f'There is new procedure phase {phase_key}')
-                return
+        phase_key = ProcedurePhase.get_key_from_dict({'name': legislation_consideration.pop('consideration_phase')})
+        procedure_phase = self.procedure_phases.get(phase_key, None)
+        if not procedure_phase:
+            sentry_sdk.capture_message(f'There is new procedure phase {phase_key}')
+            return
 
-            organization_name = legislation_consideration['organization']
-            if organization_name:
-                organization = self.storage.organization_storage.get_or_add_organization(
-                    organization_name,
-                )
-                organization_id = organization.id
-            else:
-                organization_id = None
-
-            legislation_consideration.update({
-                'organization': organization_id,
-                'procedure_phase': procedure_phase.id,
-                'legislation': law.id
-            })
-            legislation_consideration_key = LegislationConsiceration.get_key_from_dict(legislation_consideration)
-            if not legislation_consideration_key in self.legislation_considerations.keys():
-                legislation_consideration = self.set_legislation_consideration(
-                    legislation_consideration
-                )
-            else:
-                legislation_consideration = self.legislation_considerations[legislation_consideration_key]
-            return legislation_consideration
+        legislation_consideration_key = LegislationConsiceration.get_key_from_dict(legislation_consideration)
+        if not legislation_consideration_key in self.legislation_considerations.keys():
+            legislation_consideration = self.set_legislation_consideration(
+                legislation_consideration
+            )
         else:
-            print('Legislation of this consideration is not parserd')
+            legislation_consideration = self.legislation_considerations[legislation_consideration_key]
+        return legislation_consideration

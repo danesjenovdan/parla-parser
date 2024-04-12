@@ -131,13 +131,13 @@ class SessionParser(BaseParser):
                     elif legislation['result'] == 'rejected':
                         self.storage.legislation_storage.set_law_as_rejected(epa)
 
-                    self.storage.legislation_storage.set_legislation_consideration({
-                        'epa': epa,
-                        'organization': organization.id,
-                        'procedure_phase': self.storage.default_procedure_phase,
-                        'legislation': law.id,
-                        'session': session.id,
-                    })
+                self.storage.legislation_storage.prepare_and_set_legislation_consideration({
+                    'epa': epa,
+                    'organization': organization.id,
+                    'procedure_phase': self.storage.default_procedure_phase,
+                    'legislation': law.id,
+                    'session': session.id,
+                })
 
 
         if 'votes' in item.keys():
@@ -264,7 +264,7 @@ class LegislationParser(get_PDF):
         self.legislation = []
 
         self.rejected_words = ['ODBIJEN PRIJEDLOG ZAKONA', 'NIJE USVOJEN PRIJEDLOG ZAKONA']
-        self.in_procedure_words = ['PRIJEDLOG ZAKONA', 'UPUĆEN']
+        self.in_procedure_words = ['PRIJEDLOG ZAKONA', 'UPUĆEN', "PRIJEDLOGU ZAKONA", "USVOJEN ZAHTJEV ZA HITNI POSTUPAK", "NIJE USVOJEN ZAHTJEV ZA HITNI POSTUPAK"]
         self.adopted_enacted_words = ['USVOJEN ZAKON', 'USVOJEN PRIJEDLOG ZAKONA']
 
         self.skip_table_row_if_contains = ['DELEGATSKA INICIJATIVA', 'IZVJEŠTAJ', 'SAGLASNOST', 'ZNANJU INFORMACIJA']
