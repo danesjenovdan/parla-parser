@@ -292,8 +292,6 @@ class LegislationParser(get_PDF):
                 result = ''
                 if self.if_string_contains_any(law['result'], self.rejected_words):
                     result = 'rejected'
-                elif self.if_string_contains_all(law['result'], self.in_procedure_words):
-                    result = 'in_procedure'
                 elif self.if_string_contains_any(law['result'], self.adopted_enacted_words):
                     if house == 'Dom naroda':
                         if 'U PRVOM ČITANJU' in law['result']:
@@ -303,6 +301,8 @@ class LegislationParser(get_PDF):
 
                     elif house == 'Predstavnički dom':
                         result = 'in_procedure'
+                elif self.if_string_contains_any(law['result'], self.in_procedure_words):
+                    result = 'in_procedure'
                 else:
                     # IF theres unknown result text then dont add it to output
                     logger.debug('skip IF theres unknown result text then dont add it to output')
