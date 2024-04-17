@@ -279,7 +279,7 @@ class LegislationParser(get_PDF):
         return all(substring in input_string for substring in substrings)
 
     def get_results(self, house):
-        find_epa = r'[- 0-9,]*\d{3}\/\d{2}'
+        find_epa = r'[- 0-9]*\d{3}\/\d{2}'
 
         output = []
 
