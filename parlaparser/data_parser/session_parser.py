@@ -267,7 +267,7 @@ class LegislationParser(get_PDF):
         self.in_procedure_words = ['PRIJEDLOG ZAKONA', 'UPUĆEN', "PRIJEDLOGU ZAKONA", "USVOJEN ZAHTJEV ZA HITNI POSTUPAK", "NIJE USVOJEN ZAHTJEV ZA HITNI POSTUPAK"]
         self.adopted_enacted_words = ['USVOJEN ZAKON', 'USVOJEN PRIJEDLOG ZAKONA']
 
-        self.skip_table_row_if_contains = ['DELEGATSKA INICIJATIVA', 'IZVJEŠTAJ', 'SAGLASNOST', 'ZNANJU INFORMACIJA']
+        self.skip_table_row_if_contains = ['DELEGATSKA INICIJATIVA', 'IZVJEŠTAJ', 'SAGLASNOST', 'ZNANJU INFORMACIJA', 'POSLANIČKA INICIJATIVA']
 
         self.legislation = self.parse()
         logger.debug(self.legislation)
