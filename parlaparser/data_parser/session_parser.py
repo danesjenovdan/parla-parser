@@ -266,6 +266,7 @@ class LegislationParser(get_PDF):
         self.rejected_words = ['ODBIJEN PRIJEDLOG ZAKONA', 'NIJE USVOJEN PRIJEDLOG ZAKONA']
         self.in_procedure_words = ['PRIJEDLOG ZAKONA', 'UPUĆEN', "PRIJEDLOGU ZAKONA", "USVOJEN ZAHTJEV ZA HITNI POSTUPAK", "NIJE USVOJEN ZAHTJEV ZA HITNI POSTUPAK"]
         self.adopted_enacted_words = ['USVOJEN ZAKON', 'USVOJEN PRIJEDLOG ZAKONA']
+        self.suspended_words = ['ZAKONODAVNI POSTUPAK OBUSTAVLJEN']
 
         self.skip_table_row_if_contains = ['DELEGATSKA INICIJATIVA', 'IZVJEŠTAJ', 'SAGLASNOST', 'ZNANJU INFORMACIJA', 'POSLANIČKA INICIJATIVA']
 
@@ -292,6 +293,8 @@ class LegislationParser(get_PDF):
                 result = ''
                 if self.if_string_contains_any(law['result'], self.rejected_words):
                     result = 'rejected'
+                if self.if_string_contains_any(law['result'], self.suspended_words):
+                    result = 'suspended'
                 elif self.if_string_contains_any(law['result'], self.adopted_enacted_words):
                     if house == 'Dom naroda':
                         if 'U PRVOM ČITANJU' in law['result']:
