@@ -93,7 +93,7 @@ class SessionParser(BaseParser):
 
 
         if 'izvjestaj' in item.keys():
-            status_order = ['','under_consideration', 'in_procedure', 'rejected', 'adopted', 'enacted']
+            status_order = ['','under_consideration', 'in_procedure', 'suspended', 'rejected', 'adopted', 'enacted']
             find_epa = r'[- 0-9,]*\d{3}\/\d{2}'
             legislation_parser = LegislationParser(item['izvjestaj'])
             results = legislation_parser.get_results(item['session_of'])
