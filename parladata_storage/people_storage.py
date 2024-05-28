@@ -10,6 +10,7 @@ class Person(object):
         self.name = name
         self.parser_names = parser_names
         self.is_new = is_new
+        self.memberships = []
 
     def get_key(self) -> str:
         return self.parser_names.lower()
@@ -23,9 +24,10 @@ class PeopleStorage(object):
     def __init__(self, core_storage) -> None:
         self.parladata_api = ParladataApi()
         self.people = {}
+        self.people_by_id = {}
         self.storage = core_storage
         for person in self.parladata_api.get_people():
-            self.store_person(person, is_new=False)
+             self.store_person(person, is_new=False)
 
     def store_person(self, person, is_new) -> Person:
         temp_person = Person(
@@ -35,6 +37,7 @@ class PeopleStorage(object):
             is_new=is_new,
         )
         self.people[temp_person.get_key()] = temp_person
+        self.people_by_id[person['id']] = temp_person
         return temp_person
 
     def get_object_by_parsername(self, name):
@@ -77,3 +80,6 @@ class PeopleStorage(object):
         new_person = self.store_person(updated_person)
         del self.people[person.parser_name.lower()]
         return new_person
+    
+    def get_person_by_id(self, id):
+        return self.people_by_id.get(id, None)

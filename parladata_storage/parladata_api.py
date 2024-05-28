@@ -31,9 +31,17 @@ class ParladataApi(object):
             data = response.json()
             yield data['results']
             url = data['next']
-
+    
     def _get_objects(self, endpoint, limit=300, *args, **kwargs):
         url = f'{self.base_url}/{endpoint}'
+
+        args = '&'.join([f'{key}={value}' for key, value in kwargs.items()])
+        if args:
+            if '?' in url:
+                url = url + '&'+ args
+            else:
+                url = url + '?'+ args
+
         return [
             obj
             for page in self._get_data_from_pager_api_gen(url, limit)
@@ -76,8 +84,8 @@ class ParladataApi(object):
     def get_votes(self):
         return self._get_objects('votes')
 
-    def get_sessions(self):
-        return self._get_objects('sessions')
+    def get_sessions(self, **kwargs):
+        return self._get_objects('sessions', **kwargs)
 
     def get_motions(self, session=None):
         if session:
@@ -129,12 +137,8 @@ class ParladataApi(object):
         else:
             return 0
 
-    def get_memberships(self, role=None):
-        if role:
-            role = f'?role=role'
-        else:
-            role = ''
-        return self._get_objects(f'person-memberships/{role}')
+    def get_memberships(self, **kwargs):
+        return self._get_objects(f'person-memberships/', **kwargs)
 
     def patch_memberships(self, id, data):
         return self._patch_object(f'person-memberships/{id}', data).json()

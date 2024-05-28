@@ -6,6 +6,7 @@ from parlaparser.spiders.speech_spider import SpeechSpider
 from parlaparser.spiders.votes_spider import VotesSpider
 from parlaparser.spiders.comitee_spider import ComiteeSpider
 from parlaparser.spiders.questions_spider import QuestionsSpider
+from parlaparser.spiders.membership_spider import MembershipSpider
 
 from datetime import datetime
 
@@ -14,6 +15,7 @@ from parlaparser.data_parser.speech_parser import SpeechParser
 from parlaparser.data_parser.vote_parser import BallotsParser
 from parlaparser.data_parser.base_parser import HRDataStorage
 from parlaparser.data_parser.comitee_parser import ComiteeParser
+from parlaparser.data_parser.membership_parser import MembershipParser
 
 import logging
 logger = logging.getLogger('pipeline logger')
@@ -33,6 +35,13 @@ class ParlaparserPipeline(object):
             QuestionParser(item, self)
         elif type(spider) == ComiteeSpider:
             ComiteeParser(item, self)
+        elif type(spider) == MembershipSpider:
+            MembershipParser(item, self)
         else:
             return item
 
+    def open_spider(self, spider):
+        spider.myPipeline = self
+
+    def save_memberships(self):
+        MembershipParser({'type': 'refresh_memberships'}, self)

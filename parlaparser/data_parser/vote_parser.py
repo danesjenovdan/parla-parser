@@ -22,6 +22,7 @@ options = {
     'protiv':'against',
     'suzdržan':'abstain',
     'suzdržana':'abstain',
+    'sudržana': 'abstain',
     'suzdržanim':'abstain',
     'suzdržanih':'abstain',
     'susdržan':'abstain',

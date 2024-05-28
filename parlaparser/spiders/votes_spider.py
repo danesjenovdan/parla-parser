@@ -8,15 +8,17 @@ class VotesSpider(scrapy.Spider):
     BASE_URL = 'https://www.sabor.hr'
     start_urls = [
      'https://www.sabor.hr/hr/sjednice/pregled-dnevnih-redova']
-    THIS_SAZIV_ID = 170
+
     skip_urls = [
      'https://www.sabor.hr/prijedlog-polugodisnjeg-izvjestaja-o-izvrsenju0004',
      'https://www.sabor.hr/prijedlog-odluke-o-izboru-tri-suca-ustavnog-suda-r']
 
     def parse(self, response):
-        data = {'view_name':'sabor_data',
-         'view_display_id':'dnevni_redovi',
-         'field_saziv_target_id':'117054'}
+        data = {
+            'view_name':'sabor_data',
+            'view_display_id':'dnevni_redovi',
+            'field_saziv_target_id':'144984'
+        }
         print(data)
         url = 'https://www.sabor.hr/hr/views/ajax?_wrapper_format=drupal_ajax'
         for select in response.css('[name="plenarna_id"] option')[1:2]:
@@ -110,7 +112,8 @@ class VotesSpider(scrapy.Spider):
         for i in ballots_response.css('.votes .vote-row'):
             name = i.css('.name::text').extract_first()
             if not name:
-                name = i.css('.name a::text').extract_first().replace(',', '')
+                name = i.css('.name a::text').extract_first()
+                name = " ".join(reversed(name.split(", ")))
             option = i.css('.vote > span::attr(class)').extract_first()
             ballots.append({'voter':name,  'option':option})
 

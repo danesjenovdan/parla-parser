@@ -37,11 +37,8 @@ class HRDataStorage(storage.DataStorage):
         self.people_storage = storage.PeopleStorage(self)
         self.organization_storage = storage.OrganizationStorage(self)
         self.question_storage = storage.QuestionStorage(self)
-
-        api_memberships = self.parladata_api.get_memberships()
-        for membership in api_memberships:
-            self.memberships[membership['organization']][membership['member']].append(membership)
-        logging.warning(f'loaded {len(api_memberships)} memberships')
+        self.membership_storage = storage.MembershipStorage(self)
+        self.membership_storage.load_data()
 
 class BaseParser(object):
     def __init__(self, reference):
@@ -70,4 +67,3 @@ class BaseParser(object):
         for separator in separeted_by:
             word = separator.join(map(lambda x: x.lstrip('0'), word.split(separator)))
         return word
-

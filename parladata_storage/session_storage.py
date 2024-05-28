@@ -68,7 +68,7 @@ class SessionStorage(object):
         self.dz_sessions_by_names = {}
         self.sessions_in_review = []
         self.storage = core_storage
-        for session in self.parladata_api.get_sessions():
+        for session in self.parladata_api.get_sessions(mandate=self.storage.mandate_id):
             temp_session = self.sessionClass(
                 name=session['name'],
                 gov_id=session['gov_id'],

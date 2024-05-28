@@ -1,5 +1,6 @@
 #!/bin/bash
 echo "parse speeches, votes, sessions"
+scrapy crawl memberships
 scrapy crawl votes
 scrapy crawl questions
 scrapy crawl speeches
