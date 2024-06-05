@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: parlameter-update-flow
 spec:
-  schedule: "15 3,15 * * *"
+  schedule: "15 3 * * *"
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 2
   jobTemplate:
@@ -13,7 +13,7 @@ spec:
         spec:
           containers:
           - name: run-parser-flow
-            image: parlaparser-hrvaska
+            image: parlaparser-trbovlje
             env:
               - name: DJANGO_SETTINGS_MODULE
                 value: parladata_project.settings.k8s
@@ -28,9 +28,9 @@ spec:
               #    name: parlaparser-credentials
             resources:
               requests:
-                memory: 1500Mi
-                cpu: 800m
+                memory: 1000Mi
+                cpu: 500m
               limits:
-                memory: 1500Mi
-                cpu: 800m
+                memory: 1000Mi
+                cpu: 500m
           restartPolicy: Never
