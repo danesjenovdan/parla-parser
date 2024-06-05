@@ -1,4 +1,4 @@
-FROM rg.fr-par.scw.cloud/djnd/parladata-hrvaska:latest
+FROM rg.fr-par.scw.cloud/djnd/parladata-trbovlje:latest
 
 RUN apt-get update && \
     apt-get upgrade -y && \
