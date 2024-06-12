@@ -107,8 +107,8 @@ class ParladataApi(object):
     def get_public_answers(self, **kwargs):
         return self._get_objects('public-person-answers', **kwargs)
 
-    def get_legislation(self):
-        return self._get_objects('legislation')
+    def get_legislation(self, **kwargs):
+        return self._get_objects('legislation', **kwargs)
 
     def get_legislation_classifications(self):
         return self._get_objects('legislation-classifications')

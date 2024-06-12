@@ -4,12 +4,9 @@ from .utils import get_vote_key, fix_name, decode_ba_string
 from ..settings import API_DATE_FORMAT
 
 from datetime import datetime
-from requests.auth import HTTPBasicAuth
 import requests
 import pdftotext
-import copy
 import re
-import time
 
 import logging
 logger = logging.getLogger('session logger')
@@ -93,15 +90,11 @@ class SessionParser(BaseParser):
 
 
         if 'izvjestaj' in item.keys():
-            status_order = ['','under_consideration', 'in_procedure', 'suspended', 'rejected', 'adopted', 'enacted']
-            find_epa = r'[- 0-9,]*\d{3}\/\d{2}'
             legislation_parser = LegislationParser(item['izvjestaj'])
             results = legislation_parser.get_results(item['session_of'])
 
             for legislation in results:
-
                 epa = self.remove_leading_zeros(legislation['epa'])
-
                 if self.storage.legislation_storage.is_law_parsed(epa):
                     law = self.storage.legislation_storage.update_or_add_law({'epa': epa})
                     if legislation['result'] == 'enacted':
@@ -124,6 +117,7 @@ class SessionParser(BaseParser):
                             'session': session.id,
                             'mandate': self.storage.mandate_id,
                             'classification': self.storage.legislation_storage.legislation_classifications['law'].id,
+                            'status': self.storage.legislation_storage.get_legislation_status_by_name('in_procedure')
                         },
                     )
                     if legislation['result'] == 'enacted':
@@ -148,7 +142,7 @@ class SessionParser(BaseParser):
                 votes_parser = VotesParser(item['votes'])
 
             for order, parsed_vote in enumerate(votes_parser.votes):
-                logger.debug(parsed_vote.keys())
+                # logger.debug(parsed_vote.keys())
                 if 'name' in parsed_vote.keys():
                     name = parsed_vote['name'][:999]
                 else:
@@ -252,9 +246,9 @@ class LegislationParser(get_PDF):
     def __init__(self, obj):
         logger.debug('init')
         super().__init__(obj['url'], obj['file_name'])
-        #response = requests.get(obj['url'])
+        # response = requests.get(obj['url'])
 
-        logger.debug(self.pdf)
+        # logger.debug(self.pdf)
         logger.debug('pdf')
 
         content = "".join(self.pdf)
@@ -263,55 +257,105 @@ class LegislationParser(get_PDF):
         self.state = 'meta'
         self.legislation = []
 
-        self.rejected_words = ['ODBIJEN PRIJEDLOG ZAKONA', 'NIJE USVOJEN PRIJEDLOG ZAKONA']
-        self.in_procedure_words = ['PRIJEDLOG ZAKONA', 'UPUĆEN', "PRIJEDLOGU ZAKONA", "USVOJEN ZAHTJEV ZA HITNI POSTUPAK", "NIJE USVOJEN ZAHTJEV ZA HITNI POSTUPAK"]
-        self.adopted_enacted_words = ['USVOJEN ZAKON', 'USVOJEN PRIJEDLOG ZAKONA']
-        self.suspended_words = ['ZAKONODAVNI POSTUPAK OBUSTAVLJEN']
+        """
+        This dictionary is orderdy by parsing priority.
+        """
+        self.status_map = {
+            "ODBIJEN PRIJEDLOG ZAKONA": "rejected",
+            "NIJE USVOJEN PRIJEDLOG ZAKONA": "rejected",
+            "PRIJEDLOG ZAKONA U PRVOM ČITANJU SMATRA SE ODBIJENIM": "rejected",
+            "NIJE USVOJEN PRIJEDLOG ZAKONA PO HITNOM POSTUPKU": "rejected",
+            "NIJE USVOJEN PRIJEDLOG ZAKONA U PRVOM ČITANJU": "rejected",
+            "PRIJEDLOG ZAKONA SMATRA SE ODBIJENIM": "rejected",
+            "PRIJEDLOG ZAKONA ODBIJEN": "rejected",
+            "PRIJEDLOG ZAKONA U PRVOM ČITANJU I PO SKRAĆENOM POSTUPKU UPUĆEN NA USAGLAŠAVANJE KOLEGIJU DOMA": "in_procedure",
+            "USVOJEN PRIJEDLOG ZAKONA U RAZLIČITOM TEKSTU U ODNOSU NA PREDSTAVNIČKI DOM": "in_procedure",
+            "ZAJEDNIČKA KOMISIJA ZADUŽENA DA IZRADI NOVO MIŠLJENJE O PRIJEDLOGU ZAKONA": "in_procedure",
+            "PRIJEDLOG ZAKONA PO HITNOM POSTUPKU UPUĆEN NA USAGLAŠAVANJE KOLEGIJU DOMA": "in_procedure",
+            "USVOJEN PRIJEDLOG DA SE PRIJEDLOG ZAKONA RAZMATRA PO SKRAĆENOM POSTUPKU": "in_procedure",
+            "PRIJEDLOG ZAKONA U DRUGOM ČITANJU UPUĆEN NA USAGLAŠAVANJE KOLEGIJU DOMA": "in_procedure",
+            "PRIJEDLOG ZAKONA U PRVOM ČITANJU UPUĆEN NA USAGLAŠAVANJE KOLEGIJU DOMA": "in_procedure",
+            "PRIJEDLOG ZA SKRAĆENI POSTUPAK UPUĆEN NA USAGLAŠAVANJE KOLEGIJU DOMA": "in_procedure",
+            "DOM ODLUČIO DA PRIJEDLOG ZAKONA IDE U REDOVNU ZAKONODAVNU PROCEDURU": "in_procedure",
+            "PRIJEDLOG ZAKONA BIT ĆE RAZMATRAN U REDOVNOM ZAKONODAVNOM POSTUPKU": "in_procedure",
+            "USVOJEN PRIJEDLOG ZAKONA U PRVOM ČITANJU I PO SKRAĆENOM POSTUPKU": "in_procedure",
+            "PRIJEDLOG ZAKONA USVOJEN U PRVOM ČITANJU I PO SKRAĆENOM POSTUPKU": "in_procedure",
+            "ZAHTJEV ZA HITNI POSTUPAK UPUĆEN NA USAGLAŠAVANJE KOLEGIJU DOMA": "in_procedure",
+            "USVOJEN PRIJEDLOG ZAKONA U DRUGOM ČITANJU PO SKRAĆENOM POSTUPKU": "enacted",
+            "KOMISIJA ZADUŽENA DA IZRADI NOVO MIŠLJENJE O PRIJEDLOGU ZAKONA": "in_procedure",
+            "ZAKON U PRVOM ČITANJU UPUĆEN NA USAGLAŠAVANJE KOLEGIJU DOMA": "in_procedure",
+            "ODLOŽENO IZJAŠNJAVANJE O PRIJEDLOGU ZAKONA U DRUGOM ČITANJU": "in_procedure",
+            "PRIJEDLOG ZAKONA BIT ĆE RAZMATRAN U REDOVNOJ PROCEDURI": "in_procedure",
+            "OBUSTAVLJEN ZAKONODAVNI POSTUPAK ZA PRIJEDLOG ZAKONA": "suspended",
+            "USVOJEN PRIJEDLOG ZAKONA PO HITNOM POSTUPKU": "enacted",
+            "KOMISIJA ZADUŽENA DA IZRADI NOVO MIŠLJENJE": "in_procedure",
+            "KOMISIJE ZADUŽENE DA IZRADE NOVO MIŠLJENJE": "in_procedure",
+            "USVOJEN PRIJEDLOG ZAKONA U DRUGOM ČITANJU": "enacted",
+            "PRIJEDLOG ZAKONA USVOJEN U PRVOM ČITANJU": "in_procedure",
+            "USVOJEN PRIJEDLOG ZAKONA U PRVOM ČITANJU": "in_procedure",
+            "USVOJEN PRIJEDLOG ZA SKRAĆENI POSTUPAK": "in_procedure",
+            "USVOJEN ZAKON PO HITNOM POSTUPKU": "enacted",
+            "ZAKONODAVNI POSTUPAK OBUSTAVLJEN": "suspended",
+            "USVOJEN ZAKON U PRVOM ČITANJU": "in_procedure",
+            "NIJE POSTIGNUTA SAGLANOST": "in_procedure",
+            "USVOJEN PRIJEDLOG ZAKONA": "enacted",
+            "NIJE USVOJENO MIŠLJENJE": "in_procedure",
+            "PRIJEDLOGU ZAKONA": "in_procedure",
+            "PRIJEDLOG ZAKONA": "in_procedure",
+            "USVOJEN ZAKON": "enacted",
+            "NIJE USVOJEN ZAHTJEV ZA HITNI POSTUPAK": "in_procedure",
+            "USVOJEN ZAHTJEV ZA HITNI POSTUPAK": "in_procedure",
+            "UPUĆEN": "in_procedure",
+        }
 
-        self.skip_table_row_if_contains = ['DELEGATSKA INICIJATIVA', 'IZVJEŠTAJ', 'SAGLASNOST', 'ZNANJU INFORMACIJA', 'POSLANIČKA INICIJATIVA']
+        self.skip_table_row_if_contains = [
+            "DELEGATSKA INICIJATIVA",
+            "IZVJEŠTAJ",
+            "SAGLASNOST",
+            "ZNANJU INFORMACIJA",
+            "POSLANIČKA INICIJATIVA",
+        ]
 
         self.legislation = self.parse()
         logger.debug(self.legislation)
 
     def if_string_contains_any(self, input_string, substrings):
         return any(substring in input_string for substring in substrings)
-    
+
     def if_string_contains_all(self, input_string, substrings):
         return all(substring in input_string for substring in substrings)
 
+    def find_best_match(self, input_string, substrings):
+        for substring in substrings:
+            if substring in input_string:
+                return substring
+        return None
+
     def get_results(self, house):
-        find_epa = r'[- 0-9]*\d{3}\/\d{2}'
+        find_epa = r'[-\s0-9]*\d{3}([-0-9]*)?\/\d{2}'
 
         output = []
 
+        print(self.legislation)
+
         for law in self.legislation:
-            epa = re.findall(find_epa, law['text'])
-            if self.if_string_contains_any(law['result'], self.skip_table_row_if_contains):
+            epa = re.search(find_epa, law['text'])
+            print(epa)
+            if self.if_string_contains_any(law['result'], self.skip_table_row_if_contains) and not 'ZAKON' in law['result']:
                 logger.debug('skip reason:  DELEGATSKA INICIJATIVA IZVJEŠTAJ SAGLASNOST ZNANJU INFORMACIJA')
                 continue
             if epa and 'zakon' in law['text'].lower():
                 result = ''
-                if self.if_string_contains_any(law['result'], self.rejected_words):
-                    result = 'rejected'
-                if self.if_string_contains_any(law['result'], self.suspended_words):
-                    result = 'suspended'
-                elif self.if_string_contains_any(law['result'], self.adopted_enacted_words):
-                    if house == 'Dom naroda':
-                        if 'U PRVOM ČITANJU' in law['result']:
-                            result = 'adopted'
-                        else:
-                            result = 'enacted'
 
-                    elif house == 'Predstavnički dom':
-                        result = 'in_procedure'
-                elif self.if_string_contains_any(law['result'], self.in_procedure_words):
-                    result = 'in_procedure'
+                found_key = self.find_best_match(law['result'], self.status_map.keys())
+                if found_key:
+                    result = self.status_map[found_key]
                 else:
                     # IF theres unknown result text then dont add it to output
                     logger.debug('skip IF theres unknown result text then dont add it to output')
                     continue
                 output.append({
-                    'epa': epa[0].replace(' ', ''),
+                    'epa': epa.group(0).replace(' ', ''),
                     'text': law['text'],
                     'result_text': law['result'],
                     'result': result
@@ -340,7 +384,8 @@ class LegislationParser(get_PDF):
                     if text and result:
                         agenda_items.append({
                             'text': ' '.join(text),
-                            'result': ' '.join(result)
+                            'result': ' '.join(result),
+                            'results_array': result
                         })
 
                     line_columns = re.split("\s\s+", re.split("^\d+. ", line)[1])
@@ -368,7 +413,8 @@ class LegislationParser(get_PDF):
 
         agenda_items.append({
             'text': ' '.join(text),
-            'result': ' '.join(result)
+            'result': ' '.join(result),
+            'results_array': result
         })
         return agenda_items
 
@@ -417,7 +463,6 @@ class ContentParser(get_PDF):
         })
 
 
-
 class VotesParser(get_PDF):
     def __init__(self, obj):
         self.VOTE_MAP = {'Protiv': 'against', 'Za': 'for', 'Nije glasao': 'abstain', 'Suzdržan': 'abstain', 'Nije prisutan': 'absent'}
@@ -447,8 +492,8 @@ class VotesParser(get_PDF):
         self.found_keyword = False
 
         for line in self.content:
-            logger.debug(line)
-            logger.debug(self.state)
+            # logger.debug(line)
+            # logger.debug(self.state)
             #logger.debug(self.state, self.num_of_lines, self.found_keyword)
             line = line.strip()
             if re.split("\s\s+", line.strip()) == ['ZA', 'PROTIV', 'SUZDRŽAN NIJE PRISUTAN', 'UKUPNO'] or re.split("\s\s+", line.strip()) == ['ZA', 'PROTIV', 'SUZDRŽAN', 'NIJE PRISUTAN', 'UKUPNO']:
@@ -492,7 +537,7 @@ class VotesParser(get_PDF):
 
 
 
-            logger.debug(self.curr_title)
+            # logger.debug(self.curr_title)
             if self.state == 'parse':
                 if line.startswith('Redni broj tačke'):
                     current_vote['agenda_number'] = line.split(':')[1].strip()
@@ -604,7 +649,7 @@ class VotesParserPeople(get_PDF):
 
         self.parse()
 
-        logger.debug(self.votes)
+        # logger.debug(self.votes)
 
     def merge_name(self, name, agenda, typ):
         return ' - '.join([i for i in [name, agenda, typ] if i])

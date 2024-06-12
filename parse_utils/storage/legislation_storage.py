@@ -4,7 +4,7 @@ import sentry_sdk
 
 
 class Law(object):
-    def __init__(self, id, epa, text, status, timestamp, uid, classification, is_new) -> None:
+    def __init__(self, id, epa, text, status, timestamp, uid, classification, mandate, is_new) -> None:
         self.id = id
         self.epa = epa
         self.text = text
@@ -12,14 +12,15 @@ class Law(object):
         self.classification = classification
         self.timestamp = timestamp
         self.uid = uid
+        self.mandate_id = mandate
         self.is_new = is_new
 
     def get_key(self) -> str:
-        return (self.epa).strip().lower()
+        return f"{self.epa.strip().lower()}_{self.mandate_id}"
 
     @classmethod
     def get_key_from_dict(ctl, data) -> str:
-        return (data['epa'] if data['epa'] else '').strip().lower()
+        return f"{(data['epa'] if data['epa'] else '').strip().lower()}_{data['mandate']}"
 
 
 class ProcedurePhase(object):
@@ -128,7 +129,7 @@ class LegislationStorage(object):
             self.statuses_by_id[legislation_status['id']] = status
             self.legislation_statuses[status.get_key()] = status
 
-        for law in self.parladata_api.get_legislation():
+        for law in self.parladata_api.get_legislation(): # TODO mandate_id=self.storage.mandate_id):
             self.store_law(law, is_new=False)
 
         for legislation_consideration in self.parladata_api.get_legislation_consideration():
@@ -148,6 +149,7 @@ class LegislationStorage(object):
             timestamp=law_dict['timestamp'],
             classification=law_dict.get('classification', None),
             uid=law_dict['uid'],
+            mandate=law_dict['mandate'],
             is_new=is_new
         )
         self.legislation[law_obj.get_key()] = law_obj
@@ -157,9 +159,10 @@ class LegislationStorage(object):
     def set_law_as_enacted(self, epa):
         in_procedure = self.legislation_statuses['in_procedure']
         enacted = self.legislation_statuses['enacted']
-        epa = epa.lower().strip()
-        if epa in self.legislation.keys():
-            law = self.legislation[epa]
+
+        key = self.get_key_from_epa(epa)
+        if key in self.legislation.keys():
+            law = self.legislation[key]
             if law.status == in_procedure or law.status == None:
                 # update status
                 data = {'status': enacted.id}
@@ -169,9 +172,9 @@ class LegislationStorage(object):
     def set_law_as_rejected(self, epa):
         in_procedure = self.legislation_statuses['in_procedure']
         rejected = self.legislation_statuses['rejected']
-        epa = epa.lower().strip()
-        if epa in self.legislation.keys():
-            law = self.legislation[epa]
+        key = self.get_key_from_epa(epa)
+        if key in self.legislation.keys():
+            law = self.legislation[key]
             if law.status == in_procedure or law.status == None:
                 # update status
                 data = {'status': rejected.id}
@@ -210,21 +213,27 @@ class LegislationStorage(object):
         # check this if can produce memory leak
         law_obj = self.store_law(patched_law, is_new=False)
         return law_obj
+    
+    def get_key_from_epa(self, epa):
+        key = Law.get_key_from_dict({'epa': epa, 'mandate': self.storage.mandate_id})
+        return key
 
     def is_law_parsed(self, epa):
-        return epa in self.legislation.keys()
+        key = self.get_key_from_epa(epa)
+        return key in self.legislation.keys()
 
     def has_law_name(self, epa):
         return epa in self.legislation.keys()
 
     def update_or_add_law(self, law_data):
-        epa = law_data['epa'].lower().strip()
-        if epa in self.legislation.keys():
-            law = self.legislation[epa]
+        key = Law.get_key_from_dict({'epa': law_data['epa'], 'mandate': self.storage.mandate_id})
+        
+        if key in self.legislation.keys():
+            law = self.legislation[key]
             if law.text == None or law.text == '' or law.classification == None:
                 law = self.patch_law(law, law_data)
         else:
-            print(f'Adding new legislation with epa:{epa}!')
+            print(f'Adding new legislation with epa:{key}!')
             law = self.set_law(law_data)
         return law
 

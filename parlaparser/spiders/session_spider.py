@@ -17,7 +17,7 @@ class SessionSpider(scrapy.Spider):
         'https://parlament.ba/session/Read?ConvernerId=1',
         'https://parlament.ba/session/Read?ConvernerId=2',
         ]
-    base_url = 'http://parlament.ba'
+    base_url = 'https://parlament.ba'
 
     def __init__(self, house=None, gov_id=None, parse_type=None, *args,**kwargs):
         super(SessionSpider, self).__init__(*args, **kwargs)
