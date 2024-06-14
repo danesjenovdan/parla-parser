@@ -15,7 +15,7 @@ from parlaparser.data_parser.speech_parser import SpeechParser
 from parlaparser.data_parser.vote_parser import BallotsParser
 from parlaparser.data_parser.base_parser import HRDataStorage
 from parlaparser.data_parser.comitee_parser import ComiteeParser
-from parlaparser.data_parser.membership_parser import MembershipParser
+from parlaparser.data_parser.membership_parser import MembershipParser, ImageParser
 
 import logging
 logger = logging.getLogger('pipeline logger')
@@ -35,7 +35,8 @@ class ParlaparserPipeline(object):
             QuestionParser(item, self)
         elif type(spider) == ComiteeSpider:
             ComiteeParser(item, self)
-        elif type(spider) == MembershipSpider:
+        elif type(spider) in  [MembershipSpider, ImageParser]:
+            #ImageParser(item, self)
             MembershipParser(item, self)
         else:
             return item

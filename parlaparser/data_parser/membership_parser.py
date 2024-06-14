@@ -66,6 +66,24 @@ ROLES = {
         "voditelj": "leader",
     }
 
+class ImageParser(BaseParser):
+    def __init__(self, data, reference):
+        super(ImageParser, self).__init__(reference)
+        self.storage = reference.storage
+
+        self.membership_storage = self.storage.membership_storage
+        #self.membership_storage.load_data()
+
+        if data["type"] == "person":
+            self.parse_person(data)
+
+    def parse_person(self, data):
+        person = self.storage.people_storage.get_or_add_person(
+            data["name"]
+        )
+        if data["img_url"]:
+            person.save_image(data["img_url"])
+
 class MembershipParser(BaseParser):
     def __init__(self, data, reference):
         super(MembershipParser, self).__init__(reference)

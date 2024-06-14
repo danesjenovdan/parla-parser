@@ -213,6 +213,9 @@ class MembershipSpider(scrapy.Spider):
         memberships = []
         friendships = []
 
+        personal_notes = personal_div.css("div.zivotopis>p::text").extract_first().strip()
+        mandates = 1
+
         for sector in sabor_data.css("div.views-element-container"):
             title = sector.css("div.eva-header>h3::text").extract_first()
             if title:
@@ -233,6 +236,9 @@ class MembershipSpider(scrapy.Spider):
                         continue
                     else:
                         club_name = i.strip()
+
+            if title == "Pregled saziva:":
+                mandates = len(sector.css("a")) + 1
                 
 
             if title == "Dužnosti u saboru:":
@@ -292,11 +298,13 @@ class MembershipSpider(scrapy.Spider):
         yield {
             "type": "person",
             "name": name,
-            #"img_url": self.BASE_URL + img_url,
+            "img_url": self.BASE_URL + img_url if img_url else None,
             "club_role": role,
             "club_name": club_name,
             "commitees": memberships,
             "friendships": list(map(str.strip, friendships)),
+            "mandates": mandates,
+            "zivotopis": personal_notes,
         }
 
 

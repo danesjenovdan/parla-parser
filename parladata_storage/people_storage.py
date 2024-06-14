@@ -18,6 +18,9 @@ class Person(object):
     @classmethod
     def get_key_from_dict(ctl, person) -> str:
         return person['parser_names'].lower()
+    
+    def save_image(self, image_url):
+        self.parladata_api.upload_image(f'people/{self.id}', image_url)
 
 
 class PeopleStorage(object):
