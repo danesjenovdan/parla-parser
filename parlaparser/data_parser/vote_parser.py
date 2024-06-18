@@ -1,5 +1,5 @@
 from parlaparser.data_parser.base_parser import BaseParser
-from parlaparser.data_parser.utils import get_vote_key
+from parlaparser.data_parser.utils import get_vote_key, parse_month
 from parlaparser.settings import API_URL, API_DATE_FORMAT
 from datetime import datetime
 import requests, re, json, pdftotext
@@ -66,15 +66,30 @@ class BallotsParser(BaseParser):
         except:
             date = None
 
+        end_date_text = data['session_end_date']
+        if end_date_text:
+            end_date_array = end_date_text.split(" ")
+            month = parse_month(end_date_array[1])
+            day = int(end_date_array[0].replace(".", ""))
+            year = int(end_date_array[2])
+            end_date = datetime(day=day, month=month, year=year)
+        else:
+            end_date = None
+
         session_data = {
             'organization':self.storage.main_org_id,
             'organizations':[self.storage.main_org_id],
             'in_review':False,
             'name':self.session_name,
             'start_time': date,
+            'end_time': end_date,
             'gov_id': data['session_name'].split('.')[0]
         }
         self.session = self.storage.session_storage.add_or_get_session(session_data)
+
+        if end_date and (not self.session.end_time):
+            self.session.update_end_time(end_date)
+
         self.session.load_votes()
         self.motion_data = {
             'session': self.session.id

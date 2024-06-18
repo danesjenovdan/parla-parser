@@ -4,7 +4,7 @@ from parladata_storage.vote_storage import VoteStorage
 
 
 class Session(object):
-    def __init__(self, name, gov_id, id, organizations, start_time, is_new, in_review) -> None:
+    def __init__(self, name, gov_id, id, organizations, start_time, end_time, is_new, in_review) -> None:
         self.parladata_api = ParladataApi()
 
         # session members
@@ -13,6 +13,7 @@ class Session(object):
         self.organizations = organizations
         self.count = None
         self.start_time = start_time
+        self.end_time = end_time
         self.gov_id = gov_id
         self.is_new = is_new
         self.in_review = in_review
@@ -52,13 +53,21 @@ class Session(object):
         for chunk in chunks:
             self.parladata_api.set_speeches(chunk)
 
-    def update_time(self, timestamp):
+    def update_start_time(self, timestamp):
         self.parladata_api.patch_session(
             self.id,
             {'start_time': timestamp.isoformat()}
         )
         print(timestamp.isoformat())
         self.start_time = timestamp.isoformat()
+
+    def update_end_time(self, timestamp):
+        self.parladata_api.patch_session(
+            self.id,
+            {'end_time': timestamp.isoformat()}
+        )
+        print(timestamp.isoformat())
+        self.end_time = timestamp.isoformat()
 
 class SessionStorage(object):
     sessionClass = Session
@@ -73,8 +82,9 @@ class SessionStorage(object):
                 name=session['name'],
                 gov_id=session['gov_id'],
                 id=session['id'],
-                organizations = session['organizations'],
-                start_time = session['start_time'],
+                organizations=session['organizations'],
+                start_time=session['start_time'],
+                end_time=session['end_time'],
                 is_new=False,
                 in_review=session['in_review']
             )
@@ -94,10 +104,11 @@ class SessionStorage(object):
                 name=session['name'],
                 gov_id=session['gov_id'],
                 id=session['id'],
-                organizations = session['organizations'],
-                start_time = session['start_time'],
-                is_new = True,
-                in_review = session['in_review'],
+                organizations=session['organizations'],
+                start_time=session['start_time'],
+                end_time=session['end_time'],
+                is_new=True,
+                in_review=session['in_review'],
             )
             self.sessions[new_session.get_key()] = new_session
 
