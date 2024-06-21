@@ -96,12 +96,25 @@ class SessionParser(BaseParser):
             for legislation in results:
                 epa = self.remove_leading_zeros(legislation['epa'])
                 if self.storage.legislation_storage.is_law_parsed(epa):
+                    # law is allredy parsed
                     law = self.storage.legislation_storage.update_or_add_law({'epa': epa})
-                    if legislation['result'] == 'enacted':
-                        self.storage.legislation_storage.set_law_as_enacted(epa)
-                    elif legislation['result'] == 'rejected':
-                        self.storage.legislation_storage.set_law_as_rejected(epa)
+
+                    latest_law_consideration_at = law.get_timestamp_of_latest_consideration()
+
+                    legislation_consideration = self.storage.legislation_storage.prepare_and_set_legislation_consideration({
+                        'epa': epa,
+                        'organization': organization.id,
+                        'procedure_phase': self.storage.default_procedure_phase,
+                        'legislation': law.id,
+                        'session': session.id,
+                        'timestamp': start_time.isoformat()
+                    })
+
+                    if (not latest_law_consideration_at) or (start_time.isoformat() > latest_law_consideration_at):
+                        self.storage.legislation_storage.set_law_status(law, legislation['result'])
+
                 else:
+                    # add new law
                     print('save new legislation', legislation, epa)
                     split_words = [', predlagač:', ', broj:', '(prvo čitanje)']
                     text = legislation['text']
@@ -117,21 +130,18 @@ class SessionParser(BaseParser):
                             'session': session.id,
                             'mandate': self.storage.mandate_id,
                             'classification': self.storage.legislation_storage.legislation_classifications['law'].id,
-                            'status': self.storage.legislation_storage.get_legislation_status_by_name('in_procedure')
+                            'status': self.storage.legislation_storage.get_legislation_status_by_name(legislation['result'])
                         },
                     )
-                    if legislation['result'] == 'enacted':
-                        self.storage.legislation_storage.set_law_as_enacted(epa)
-                    elif legislation['result'] == 'rejected':
-                        self.storage.legislation_storage.set_law_as_rejected(epa)
 
-                self.storage.legislation_storage.prepare_and_set_legislation_consideration({
-                    'epa': epa,
-                    'organization': organization.id,
-                    'procedure_phase': self.storage.default_procedure_phase,
-                    'legislation': law.id,
-                    'session': session.id,
-                })
+                    legislation_consideration = self.storage.legislation_storage.prepare_and_set_legislation_consideration({
+                        'epa': epa,
+                        'organization': organization.id,
+                        'procedure_phase': self.storage.default_procedure_phase,
+                        'legislation': law.id,
+                        'session': session.id,
+                        'timestamp': start_time.isoformat()
+                    })
 
 
         if 'votes' in item.keys():

@@ -14,6 +14,8 @@ class Law(object):
         self.uid = uid
         self.mandate_id = mandate
         self.is_new = is_new
+        self.considerations = []
+
 
     def get_key(self) -> str:
         return f"{self.epa.strip().lower()}_{self.mandate_id}"
@@ -21,6 +23,13 @@ class Law(object):
     @classmethod
     def get_key_from_dict(ctl, data) -> str:
         return f"{(data['epa'] if data['epa'] else '').strip().lower()}_{data['mandate']}"
+    
+    def get_timestamp_of_latest_consideration(self):
+        if not self.considerations:
+            return None
+        return max([consideration.timestamp for consideration in self.considerations])
+    
+
 
 
 class ProcedurePhase(object):
@@ -155,6 +164,12 @@ class LegislationStorage(object):
         self.legislation[law_obj.get_key()] = law_obj
         self.legislation_by_id[law_obj.id] = law_obj
         return law_obj
+    
+    def set_law_status(self, law, status_name):
+        status = self.legislation_statuses[status_name]
+        data = {'status': status.id}
+        patched_law = self.parladata_api.patch_legislation(law.id, data)
+        law.status = status
 
     def set_law_as_enacted(self, epa):
         in_procedure = self.legislation_statuses['in_procedure']
@@ -192,6 +207,7 @@ class LegislationStorage(object):
             session=consideration_dict['session'],
             is_new=is_new
         )
+        law.considerations.append(consideration)
         self.legislation_considerations[consideration.get_key()] = consideration
         return consideration
 
