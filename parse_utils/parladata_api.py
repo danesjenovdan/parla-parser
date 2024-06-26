@@ -95,8 +95,8 @@ class ParladataApi(object):
             endpoint = 'motions'
         return self._get_objects(endpoint)
 
-    def get_agenda_items(self):
-        return self._get_objects('agenda-items')
+    def get_agenda_items(self, **kwargs):
+        return self._get_objects('agenda-items', **kwargs)
 
     def get_questions(self, **kwargs):
         return self._get_objects('questions', **kwargs)

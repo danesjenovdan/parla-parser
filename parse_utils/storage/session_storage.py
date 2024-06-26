@@ -1,5 +1,6 @@
 from parse_utils.parladata_api import ParladataApi
 from parse_utils.storage.vote_storage import VoteStorage
+from parse_utils.storage.agenda_item_storage import AgendaItemStorage
 
 from parlaparser.settings import MANDATE
 
@@ -33,6 +34,8 @@ class Session(object):
         # objects custom keys
         self.motion_keys = motion_keys
 
+        self.agenda_item_storage = None
+
     def get_key(self) -> str:
         if not self.gov_id:
             print(f'Session {self.name} has not gov id')
@@ -54,6 +57,9 @@ class Session(object):
     def load_votes(self):
         print('loading_votes')
         self.vote_storage = VoteStorage(self, self.motion_keys)
+
+    def load_agenda_items(self):
+        self.agenda_item_storage = AgendaItemStorage(self)
 
     def add_speeches(self, data):
         chunks = [data[x:x+50] for x in range(0, len(data), 50)]

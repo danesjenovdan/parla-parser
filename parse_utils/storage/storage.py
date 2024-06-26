@@ -43,7 +43,6 @@ class DataStorage(object):
         self.organization_storage = OrganizationStorage(self)
         self.question_storage = QuestionStorage(self)
         self.public_question_storage = PublicQuestionStorage(self)
-        self.agenda_item_storage = AgendaItemStorage(self)
         self.membership_storage = MembershipStorage(self)
 
 
@@ -52,7 +51,6 @@ class DataStorage(object):
     def set_area(self, data):
         added_area = self.parladata_api.set_area(data)
         return added_area.json()
-
 
     # links
     def set_link(self, data):

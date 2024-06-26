@@ -53,7 +53,17 @@ class SessionSpider(scrapy.Spider):
         start_date = ''.join([i.strip() for i in response.css('.schedule::text').extract()])
         start_time = response.css('.time::text').extract_first()
 
-        agenda_items = response.css(".session-schedule p::text").extract()
+        agenda_items = []
+        for li in response.css("ul.session-schedule>li"):
+            agenda_items.append(
+                {
+                    "docs": [{
+                        "url": self.base_url + url_li.css('::attr(href)').extract_first(),
+                        "name": url_li.css("::text").extract_first(),
+                    } for url_li in li.css("a.doc")],
+                    "text": self.normalize_agenda_text(li.css("p::text").extract_first())
+                }
+            )
 
         print(session_name)
 
@@ -99,3 +109,11 @@ class SessionSpider(scrapy.Spider):
         self.logger.info('Saving PDF %s', file_name)
         with open('files/'+file_name, 'wb') as f:
             f.write(response.body)
+
+    def normalize_agenda_text(self, text):
+        #cut_order = r"^\d*\. "
+        #agenda_text = re.sub(cut_order, "", text).strip()
+        agenda_text = text.strip()
+        if agenda_text[-1] in [";", ":"]:
+            agenda_text = agenda_text[:-1]
+        return agenda_text

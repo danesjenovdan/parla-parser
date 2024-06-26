@@ -7,6 +7,7 @@ from datetime import datetime
 import requests
 import pdftotext
 import re
+from datetime import timedelta
 
 import logging
 logger = logging.getLogger('session logger')
@@ -56,13 +57,19 @@ class SessionParser(BaseParser):
 
         session = self.storage.session_storage.add_or_get_session(session_data)
         session.load_votes()
+        session.load_agenda_items()
 
 
         if 'agenda_items' in item.keys():
-            for agenda_item in item['agenda_items']:
-                agenda_text = re.sub(cut_order, '', agenda_item)
-                if agenda_text[-1] == ';':
-                    agenda_text = agenda_text[:-1]
+            for i, agenda_itme in enumerate(item["agenda_items"]):
+                ai = session.agenda_item_storage.get_or_add_agenda_item({
+                    "datetime": (start_time + timedelta(minutes=i)).isoformat(),
+                    "name": agenda_itme["text"],
+                })
+                if ai.is_new:
+                    for link in agenda_itme["docs"]:
+                        ai.set_link(**link)
+
 
 
 

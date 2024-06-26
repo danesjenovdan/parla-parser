@@ -2,29 +2,37 @@ from parse_utils.parladata_api import ParladataApi
 
 
 class AgendaItem(object):
-    def __init__(self, name, id, datetime, is_new) -> None:
+    def __init__(self, name, id, datetime, session, is_new) -> None:
         self.parladata_api = ParladataApi()
 
         # session members
         self.id = id
         self.name = name
+        self.session = session
         self.datetime = datetime
         self.is_new = is_new
 
     def get_key(self) -> str:
-        return (self.name + '_' + self.datetime).strip().lower()
+        return (f'{self.name}_{self.session.id}').strip().lower()
 
     @classmethod
     def get_key_from_dict(ctl, agenda_item) -> str:
-        return (agenda_item['name'] + '_' + agenda_item['datetime']).strip().lower()
+        return (f"{agenda_item['name']}_{agenda_item['session']}").strip().lower()
+    
+    def set_link(self, url, name):
+        self.parladata_api.set_link({
+            "url": url,
+            "name": name,
+            "agenda_item": self.id
+        })
 
 
 class AgendaItemStorage(object):
-    def __init__(self, core_storage) -> None:
+    def __init__(self, session) -> None:
         self.parladata_api = ParladataApi()
         self.agenda_items = {}
-        self.storage = core_storage
-        for agenda_item in self.parladata_api.get_agenda_items():
+        self.session = session
+        for agenda_item in self.parladata_api.get_agenda_items(session=session.id):
             self.store_agenda_item(agenda_item, is_new=False)
 
     def store_agenda_item(self, agenda_item, is_new) -> AgendaItem:
@@ -32,12 +40,14 @@ class AgendaItemStorage(object):
             name=agenda_item['name'],
             datetime = agenda_item['datetime'],
             id=agenda_item['id'],
+            session=self.session,
             is_new=is_new,
         )
         self.agenda_items[temp_agenda_item.get_key()] = temp_agenda_item
         return temp_agenda_item
 
-    def get_or_add_agenda_item(self, data,) -> AgendaItem:
+    def get_or_add_agenda_item(self, data) -> AgendaItem:
+        data.update(session=self.session.id)
         key = AgendaItem.get_key_from_dict(data)
         if key in self.agenda_items.keys():
             agenda_item = self.agenda_items[key]
@@ -45,6 +55,3 @@ class AgendaItemStorage(object):
             added_agenda_item = self.parladata_api.set_agenda_item(data)
             agenda_item = self.store_agenda_item(added_agenda_item, is_new=True)
         return agenda_item
-
-
-
