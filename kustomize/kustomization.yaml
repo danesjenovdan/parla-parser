@@ -6,4 +6,4 @@ resources:
 images:
   - name: parlaparser-trbovlje
     newName: rg.fr-par.scw.cloud/djnd/parlaparser-trbovlje
-    newTag: '868a8f30a3bbacd5251c7b7f8f74d7cff9c9f72e'
+    newTag: '1f584e30f748be5632aa5fc02e3ddcfc969f0224'
