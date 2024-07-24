@@ -74,6 +74,8 @@ class QuestionsSpider(scrapy.Spider):
         author = response.css("#ctl00_ContentPlaceHolder_lblzastupnikValue::text").extract()
         title = ''.join(response.css("#ctl00_ContentPlaceHolder_PitanjeFonogram *::text").extract())
 
+        content_url = response.css("a#ctl00_ContentPlaceHolder_PitanjeFonogram::attr(href)").extract_first()
+
         ref = response.css("#ctl00_ContentPlaceHolder_lblsazivValue::text").extract()
         date = response.css("#ctl00_ContentPlaceHolder_lbldatumPostavljanjaValue::text").extract()
         typ = response.css("#ctl00_ContentPlaceHolder_lblnacinPostavljanjaValue::text").extract()
@@ -89,16 +91,52 @@ class QuestionsSpider(scrapy.Spider):
         if not answer_date:
             if 'sjednici' in response.css("#ctl00_ContentPlaceHolder_lblnacinPostavljanjaValue::text").extract_first():
                 answer_date = date
-        yield {'author': author,
-               'title': title,
-               'ref': ref,
-               'date': date,
-               'typ': typ,
-               'recipient': recipient,
-               'field': field,
-               'signature': signature,
-               'link': link,
-               'edoc_url': response.url,
-               'answer': answer,
-               'answer_date': answer_date}
+        if 'sjednici' in response.css("#ctl00_ContentPlaceHolder_lblnacinPostavljanjaValue::text").extract_first():
+            yield scrapy.Request(
+                url='https://edoc.sabor.hr/Views/' + content_url,
+                callback=self.parser_question_content,
+                meta={
+                    'question': {
+                        'author': author,
+                        'title': title,
+                        'ref': ref,
+                        'date': date,
+                        'typ': typ,
+                        'recipient': recipient,
+                        'field': field,
+                        'signature': signature,
+                        'link': link,
+                        'edoc_url': response.url,
+                        'answer': answer,
+                        'answer_date': answer_date
+                    }
+                }
+            )
+        else:
+            yield {
+                'author': author,
+                'title': title,
+                'ref': ref,
+                'date': date,
+                'typ': typ,
+                'recipient': recipient,
+                'field': field,
+                'signature': signature,
+                'link': link,
+                'edoc_url': response.url,
+                'answer': answer,
+                'answer_date': answer_date
+            }
+        
+    def parser_question_content(self, response):
+        # This is for parsing questions asked during a session
+        question = response.meta["question"]
+        dialog = []
+        for content in response.css(".singleContentContainer"):
+            if speaker := content.css(".speaker"):
+                speaker = speaker.css("h2::text").extract_first().strip()
+                content = "\n".join([line.strip() for line in content.css("dd.textColor::text").extract()])
+                dialog.append({"speaker": speaker, "content": content})
+        question["dialog"] = dialog
+        yield question
 

@@ -215,6 +215,9 @@ class ParladataApi(object):
 
     def set_question(self, data):
         return self._set_object('questions', data).json()
+    
+    def set_answer(self, data):
+        return self._set_object('answers', data).json()
 
     def patch_question(self, id, data):
         return self._patch_object(f'questions/{id}', data).json()

@@ -22,6 +22,10 @@ class Question(object):
         question = self.parladata_api.patch_question(self.id, data)
         self.answer_timestamp=question['answer_timestamp']
         return question
+    
+    def add_answer(self, data):
+        data.update(question=self.id)
+        return self.parladata_api.set_answer(data)
 
 
 class QuestionStorage(object):

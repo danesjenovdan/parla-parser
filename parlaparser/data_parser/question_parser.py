@@ -35,6 +35,7 @@ class QuestionParser(BaseParser):
         self.field = data['field'][0]
         self.signature = data['edoc_url'].split('=')[1]
         self.edoc_url = data['edoc_url']
+        self.dialog = data.get('dialog', None)
         if data['link']:
             self.url = data['link'][0]
         else:
@@ -83,8 +84,6 @@ class QuestionParser(BaseParser):
 
         self.question['signature'] = self.signature
 
-        self.question['title'] = self.field + ' | ' + self.title
-
         author_prs = []
         author_orgs = []
         authors = self.author.split(';')
@@ -107,6 +106,19 @@ class QuestionParser(BaseParser):
         else:
             recipient_party_id = None
 
+        self.question['title'] = self.field + ' | ' + self.title
+        answer = None
+
+        if self.dialog:
+            for line in self.dialog:
+                author_pr, author_org = self.parse_edoc_person(line["speaker"])
+                person_id = self.storage.people_storage.get_or_add_person(author_pr).id
+                if person_id == author_ids[0]:
+                   self.question['title'] = line["content"]
+                if person_id == recipient.id:
+                    answer = line["content"]
+                    break
+
         self.question['person_authors'] = author_ids
         self.question['organization_authors'] = author_org_ids
         self.question['recipient_people'] = [recipient.id]
@@ -116,10 +128,14 @@ class QuestionParser(BaseParser):
 
         # send question
         question = self.question_storage.add_or_get_question(self.question)
+        if answer:
+            question.add_answer({
+                "text": answer,
+                "person_authors": [recipient.id],
+                "timestamp": self.date_f.strftime("%Y-%m-%d")
+            })
 
         # send link
         if question.is_new and self.url:
             self.link['question'] = question.id
             self.storage.set_link(self.link)
-
-
