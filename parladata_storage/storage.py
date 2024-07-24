@@ -11,7 +11,6 @@ from collections import defaultdict
 from datetime import datetime
 
 import logging
-import editdistance
 
 
 class NoneError(Exception):

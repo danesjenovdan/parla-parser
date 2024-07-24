@@ -8,7 +8,6 @@ from parladata_storage import session_storage
 from requests.auth import HTTPBasicAuth
 
 import requests
-import editdistance
 
 from datetime import datetime
 
