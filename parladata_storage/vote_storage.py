@@ -12,37 +12,47 @@ class Motion(object):
         self.gov_id = gov_id
         self.is_new = is_new
         self.vote = None
+        self.parladata_api = ParladataApi()
 
     def get_key(self) -> str:
-        #return (self.gov_id if self.gov_id else '').strip().lower()
-        return (self.text + '_' + self.datetime).strip().lower()
+        date = self.datetime#.split('T')[0]
+        return (self.text + '_' + date).strip().lower()
 
     @classmethod
     def get_key_from_dict(ctl, data) -> str:
-        #return (data['gov_id'] if data['gov_id'] else '').strip().lower()
-        return (data['text'] + '_' + data['datetime']).strip().lower()
+        date = data['datetime']#.split('T')[0]
+        return (data['text'] + '_' + date).strip().lower()
+    
+    def patch(self, data):
+        self.parladata_api.patch_motion(self.id, data)
 
 
 class Vote(object):
-    def __init__(self, id, name, timestamp, is_new) -> None:
+    def __init__(self, id, name, timestamp, has_anonymous_ballots, is_new) -> None:
         self.id = id
         self.name = name
         self.timestamp = timestamp
+        self.has_anonymous_ballots = has_anonymous_ballots
         self.is_new = is_new
+        self.parladata_api = ParladataApi()
+
+    def delete_ballots(self):
+        self.parladata_api.delete_vote_ballots(self.id)
 
     def get_key(self) -> str:
-        #return (self.gov_id if self.gov_id else '').strip().lower()
-        return (self.name + '_' + self.timestamp).strip().lower()
+        date = self.timestamp.split('T')[0]
+        return (self.name + '_' + date).strip().lower()
 
     @classmethod
     def get_key_from_dict(ctl, data) -> str:
-        #return (data['gov_id'] if data['gov_id'] else '').strip().lower()
-        return (data['name'] + '_' + data['timestamp']).strip().lower()
+        date = data['timestamp'].split('T')[0]
+        return (data['name'] + '_' + date).strip().lower()
 
 class VoteStorage(object):
     def __init__(self, session) -> None:
         self.parladata_api = ParladataApi()
         self.motions = {}
+        self.anonymous_motions = None
 
         self.session = session
 
@@ -56,11 +66,19 @@ class VoteStorage(object):
                 datetime = motion['datetime'],
                 is_new=False,
             )
+            
+            vote_id = motion['vote'][0]
+            vote = self.parladata_api.get_vote(vote_id)
+            temp_vote = Vote(
+                name=vote['name'],
+                id=vote_id,
+                timestamp = vote['timestamp'],
+                has_anonymous_ballots=vote['has_anonymous_ballots'],
+                is_new=False
+            )
+            temp_motion.vote = temp_vote
             self.motions[temp_motion.get_key()] = temp_motion
 
-    def set_vote(self, data):
-        added_vote = self.parladata_api.set_vote(data)
-        return added_vote
 
     def patch_vote(self, vote, data):
         self.parladata_api.patch_vote(vote.id, data)
@@ -113,7 +131,7 @@ class VoteStorage(object):
 
     def check_if_motion_is_parsed(self, motion):
         key = Motion.get_key_from_dict(motion)
-        return key in self.motions.keys()
+        return self.motions.get(key, None)
 
 
 

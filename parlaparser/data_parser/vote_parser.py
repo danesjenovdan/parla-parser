@@ -142,15 +142,24 @@ class BallotsParser(BaseParser):
             self.ballots = data['ballots']
             self.parse_time()
             print("")
-            if self.session.vote_storage.check_if_motion_is_parsed(self.motion_data):
+            motion_without_hour = self.motion_data.copy()
+            motion_without_hour['datetime'] = motion_without_hour['datetime'].split('T')[0] + 'T00:00:00'
+
+
+            if existing_motion := self.session.vote_storage.check_if_motion_is_parsed(motion_without_hour):
+                # if found vote with anonymous ballots
                 print('motion is saved')
-                if self.is_motion_saved_without_ballots():
-                    # add ballots to vote
+                if existing_motion.vote.has_anonymous_ballots:
+                    # delete anonymous ballots and add ballots to vote
+                    existing_motion.vote.delete_ballots()
+                    existing_motion.patch({'datetime': self.time_f.isoformat()})
                     self.parse_results()
-                    motion_id = self.reference.motions[self.source_data['id']]
-                    vote_id = self.reference.votes_without_ballots[motion_id]
-                    self.parse_ballots(vote_id)
-                elif PARSE_JUST_NEW_VOTES:
+                    self.parse_ballots(existing_motion.vote.id)
+
+
+            elif existing_motion := self.session.vote_storage.check_if_motion_is_parsed(self.motion_data):
+                print('motion is saved')
+                if PARSE_JUST_NEW_VOTES:
                     print('This motion is allready parsed')
                 else:
                     pass
@@ -212,10 +221,8 @@ class BallotsParser(BaseParser):
         print('IS SAVED:  ', self.source_data['id'] in self.reference.motions.keys())
         return self.source_data['id'] in self.reference.motions.keys()
 
-    def is_motion_saved_without_ballots(self):
-        #return self.source_data['id'] in self.reference.votes_without_ballots.keys()
-        # TODO save to motion if has annonymous ballots
-        return False
+    def is_motion_saved_without_ballots(self, motion):
+        return motion.vote.has_anonymous_ballots
 
     def get_motion_id(self):
         return self.reference.motions[self.source_data['id']]

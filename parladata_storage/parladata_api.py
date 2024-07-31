@@ -46,6 +46,17 @@ class ParladataApi(object):
             obj
             for page in self._get_data_from_pager_api_gen(url, limit)
             for obj in page]
+    
+    def _get_object(self, endpoint, object_id):
+        response = requests.get(
+                f'{self.base_url}/{endpoint}/{object_id}',
+                auth=self.auth
+            )
+        if response.status_code > 299:
+            logger.warning(response.content)
+            logger.warning(f'{self.base_url}/{endpoint}/')
+            sentry_sdk.capture_message(f'Parladata request GET endpoint: {endpoint} responed with body: {response.content}')
+        return response.json()
 
     def _set_object(self, endpoint, data):
         response = requests.post(
@@ -71,6 +82,18 @@ class ParladataApi(object):
             logger.warning(f'{self.base_url}/{endpoint}/')
             sentry_sdk.capture_message(f'Parladata request PATCH endpoint: {endpoint} responed with body: {response.content}')
         return response
+    
+    def _delete_object(self, endpoint):
+        response = requests.delete(
+                f'{self.base_url}/{endpoint}/',
+                auth=self.auth
+            )
+        if response.status_code > 299:
+            logger.warning(response.content)
+            logger.warning(f'{self.base_url}/{endpoint}/')
+            sentry_sdk.capture_message(f'Parladata request DELETE endpoint: {endpoint} responed with body: {response.content}')
+        return response
+                       
 
     def set_object(self, endpoint, data):
         return self._set_object(endpoint, data)
@@ -81,8 +104,14 @@ class ParladataApi(object):
     def get_organizations(self):
         return self._get_objects('organizations')
 
+    def get_vote(self, vote_id):
+        return self._get_object('votes', vote_id)
+
     def get_votes(self):
         return self._get_objects('votes')
+    
+    def delete_vote_ballots(self, vote_id):
+        return self._delete_object(f'votes/{vote_id}/delete_ballots')
 
     def get_sessions(self, **kwargs):
         return self._get_objects('sessions', **kwargs)
