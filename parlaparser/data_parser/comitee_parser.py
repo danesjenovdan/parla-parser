@@ -1,8 +1,6 @@
 from parlaparser.data_parser.base_parser import BaseParser
-from .utils import get_vote_key
-from ..settings import API_URL, API_AUTH, API_DATE_FORMAT
-from datetime import datetime, timedelta
-import requests, re, json
+from datetime import datetime
+import re
 
 
 PARSE_JUST_NEW_VOTES = False
@@ -84,7 +82,7 @@ class ComiteeParser(BaseParser):
                     self.data['session_name'] = self.data['session_name'].split('Mandatno-imunitetnog')[0].strip()
         session_name = self.data['session_name']
 
-        self.organization = self.storage.organization_storage.get_or_add_organization_object({
+        self.organization = self.storage.organization_storage.get_or_add_object({
             'name':self.data['wb_title'].strip(),
             'parser_names':self.data['wb_title'].strip().lower(),
             'classification': 'committee'
@@ -98,8 +96,7 @@ class ComiteeParser(BaseParser):
             'in_review':False,
             "classification": 'regular'
         }
-        self.session = self.storage.session_storage.add_or_get_session(session_data)
-        self.session.load_agenda_items()
+        self.session = self.storage.session_storage.add_or_get_object(session_data)
 
     def get_date(self):
         if self.data['datetime_utc']:
@@ -121,7 +118,7 @@ class ComiteeParser(BaseParser):
                     if striped_text:
                         if striped_text[(-1)] == ';':
                             striped_text = striped_text[:-1]
-                        self.session.agenda_items_storage.get_or_add_agenda_item({
+                        self.session.agenda_items_storage.get_or_add_object({
                             'name': striped_text,
                             'session': self.session.id,
                             'order': i,
@@ -216,7 +213,7 @@ class ComiteeParser(BaseParser):
         motion_data['session'] = self.session.id
         self.data['datetime_utc'] = None
         self.session.load_votes()
-        motion = self.session.vote_storage.add_or_get_motion_and_vote(
+        motion = self.session.vote_storage.add_or_get_object(
             motion_data
         )
         data = []

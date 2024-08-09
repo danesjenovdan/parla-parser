@@ -1,11 +1,9 @@
 from .base_parser import BaseParser
-from parladata_storage.agenda_item_storage import AgendaItem
 
-from ..settings import API_URL, API_AUTH, API_DATE_FORMAT
+from ..settings import API_DATE_FORMAT
 
 from datetime import datetime
-from requests.auth import HTTPBasicAuth
-import requests
+
 
 class SpeechParser(BaseParser):
     def __init__(self, data, reference):
@@ -24,8 +22,8 @@ class SpeechParser(BaseParser):
 
         self.speeches = []
 
-        organization = self.storage.organization_storage.get_or_add_organization(
-            'Sabor',
+        organization = self.storage.organization_storage.get_organization_by_id(
+            self.storage.main_org_id
         )
         gov_id = data['agenda_id']
         session = data['session_ref'][0].split(':')[-1].strip()
@@ -42,8 +40,7 @@ class SpeechParser(BaseParser):
         }
 
         # get and set session
-        session = self.storage.session_storage.add_or_get_session(session_data)
-        session.load_agenda_items()
+        session = self.storage.session_storage.add_or_get_object(session_data)
 
         self.agenda_ids = []
         methods = []
@@ -59,7 +56,7 @@ class SpeechParser(BaseParser):
             }
             # agenda_key = AgendaItem.get_key_from_dict(agenda_json)
 
-            agenda_item, added = session.agenda_items_storage.get_or_add_agenda_item(agenda_json)
+            agenda_item, added = session.agenda_items_storage.get_or_add_object(agenda_json)
             self.agenda_ids.append(agenda_item.id)
             print(added, agenda_text.strip())
             methods.append(added)
@@ -71,7 +68,7 @@ class SpeechParser(BaseParser):
             for order, speech in enumerate(speeches):
                 # SPEECH
                 speaker_name, pg = self.parse_edoc_person(speech['speaker'])
-                speaker = self.storage.people_storage.get_or_add_person(speaker_name)
+                speaker = self.storage.people_storage.get_or_add_object({"name": speaker_name})
 
                 speech = {
                     'session': session.id,

@@ -1,11 +1,8 @@
 from .base_parser import BaseParser
-from parladata_storage.agenda_item_storage import AgendaItem
 
-from ..settings import API_URL, API_AUTH, API_DATE_FORMAT
+from ..settings import API_DATE_FORMAT
 
 from datetime import datetime
-from requests.auth import HTTPBasicAuth
-import requests
 
 """
 {
@@ -72,15 +69,14 @@ class ImageParser(BaseParser):
         self.storage = reference.storage
 
         self.membership_storage = self.storage.membership_storage
-        #self.membership_storage.load_data()
 
         if data["type"] == "person":
             self.parse_person(data)
 
     def parse_person(self, data):
-        person = self.storage.people_storage.get_or_add_person(
-            data["name"]
-        )
+        person = self.storage.people_storage.get_or_add_object({
+            "name": data["name"]
+        })
         if data["img_url"]:
             person.save_image(data["img_url"])
 
@@ -90,7 +86,6 @@ class MembershipParser(BaseParser):
         self.storage = reference.storage
 
         self.membership_storage = self.storage.membership_storage
-        #self.membership_storage.load_data()
 
         if data["type"] == "person":
             self.parse_person(data)
@@ -102,18 +97,24 @@ class MembershipParser(BaseParser):
             self.refresh_memberships()
 
     def parse_person(self, data):
-        person = self.storage.people_storage.get_or_add_person(
-            data["name"]
-        )
+        person = self.storage.people_storage.get_or_add_object({
+            "name": data["name"]
+        })
         if data["club_name"]:
-            club = self.storage.organization_storage.get_or_add_organization(
-                data["club_name"]
-            )
+            club = self.storage.organization_storage.get_or_add_object({
+                "name": data["club_name"]
+            })
         else:
             club = None
-        self.membership_storage.temporary_data[self.storage.main_org_id].append({'type': 'sabor', 'member': person, 'organization': club})
+        self.membership_storage.temporary_data[self.storage.main_org_id].append({
+            'type': 'sabor',
+            'member': person,
+            'organization': club
+        })
         for commitee in data["commitees"]:
-            commitee_org = self.storage.organization_storage.get_or_add_organization(commitee["name"])
+            commitee_org = self.storage.organization_storage.get_or_add_object({
+                "name": commitee["name"]
+            })
             self.membership_storage.temporary_data[commitee_org.id].append({
                 'type': 'commitee',
                 'member': person,
@@ -125,12 +126,12 @@ class MembershipParser(BaseParser):
 
     def parse_club_roles(self, data):
         person_name = data["person_name"].strip()
-        person = self.storage.people_storage.get_or_add_person(
-            person_name
-        )
-        club = self.storage.organization_storage.get_or_add_organization(
-            data["club_name"].strip()
-        )
+        person = self.storage.people_storage.get_or_add_object({
+            "name": person_name
+        })
+        club = self.storage.organization_storage.get_or_add_object({
+            "name": data["club_name"].strip()
+        })
         role = data["role"].lower()
 
         self.membership_storage.temporary_roles[club.id].append({

@@ -1,5 +1,4 @@
 from .base_parser import BaseParser
-from ..settings import API_URL, API_AUTH, API_DATE_FORMAT
 
 from datetime import datetime
 
@@ -59,14 +58,14 @@ class QuestionParser(BaseParser):
         self.date_f = None
 
         if self.question_storage.check_if_question_is_parsed(self.question):
-            question = self.question_storage.add_or_get_question(self.question)
-            if not self.answer_date and question.answer_timestamp:
+            question = self.question_storage.add_or_get_object(self.question)
+            if question.answer_timestamp:
                 pass
             else:
                 print(self.answer_date)
                 if self.answer_date:
                     # Update answer with answer date
-                    question.update_data({'answer_date': self.answer_date.isoformat()})
+                    question.update_data({'answer_timestamp': self.answer_date.isoformat()})
         else:
             # parse data
             self.parse_time()
@@ -76,6 +75,9 @@ class QuestionParser(BaseParser):
         self.date_f = datetime.strptime(self.date, "%d.%m.%Y.")
         self.question['timestamp'] = self.date_f.isoformat()
         self.link['date'] = self.date_f.strftime("%Y-%m-%d")
+
+        if self.answer_date:
+            self.question['answer_timestamp'] = self.answer_date.isoformat()
 
     def parse_data(self, update=False):
         if self.url:
@@ -97,12 +99,14 @@ class QuestionParser(BaseParser):
         author_ids = []
         author_org_ids = []
         for author_pr in author_prs:
-            author = self.storage.people_storage.get_or_add_person(author_pr)
+            author = self.storage.people_storage.get_or_add_object({"name": author_pr})
             author_ids.append(author.id)
 
-        recipient = self.storage.people_storage.get_or_add_person(recipient_pr)
+        recipient = self.storage.people_storage.get_or_add_object({"name": recipient_pr})
         if recipient_org:
-            recipient_party_id = self.storage.organization_storage.get_or_add_organization(recipient_org.strip()).id
+            recipient_party_id = self.storage.organization_storage.get_or_add_object({
+                "name": recipient_org.strip()
+            }).id
         else:
             recipient_party_id = None
 
@@ -112,7 +116,7 @@ class QuestionParser(BaseParser):
         if self.dialog:
             for line in self.dialog:
                 author_pr, author_org = self.parse_edoc_person(line["speaker"])
-                person_id = self.storage.people_storage.get_or_add_person(author_pr).id
+                person_id = self.storage.people_storage.get_or_add_object({"name": author_pr}).id
                 if person_id == author_ids[0]:
                    self.question['title'] = line["content"]
                 if person_id == recipient.id:
@@ -127,7 +131,7 @@ class QuestionParser(BaseParser):
         self.question['recipient_text'] = self.recipient
 
         # send question
-        question = self.question_storage.add_or_get_question(self.question)
+        question = self.question_storage.add_or_get_object(self.question)
         if answer:
             question.add_answer({
                 "text": answer,

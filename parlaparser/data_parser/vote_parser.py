@@ -1,6 +1,6 @@
 from parlaparser.data_parser.base_parser import BaseParser
-from parlaparser.data_parser.utils import get_vote_key, parse_month
-from parlaparser.settings import API_URL, API_DATE_FORMAT
+from parlaparser.data_parser.utils import parse_month
+from parlaparser.settings import API_DATE_FORMAT
 from datetime import datetime
 import requests, re, json, pdftotext
 
@@ -85,12 +85,11 @@ class BallotsParser(BaseParser):
             'end_time': end_date,
             'gov_id': data['session_name'].split('.')[0]
         }
-        self.session = self.storage.session_storage.add_or_get_session(session_data)
+        self.session = self.storage.session_storage.add_or_get_object(session_data)
 
         if end_date and (not self.session.end_time):
             self.session.update_end_time(end_date)
 
-        self.session.load_votes()
         self.motion_data = {
             'session': self.session.id
         }
@@ -216,28 +215,6 @@ class BallotsParser(BaseParser):
 
             }
             self.storage.legislation_storage.set_legislation_consideration(procedure)
-
-    def is_motion_saved(self):
-        print('IS SAVED:  ', self.source_data['id'] in self.reference.motions.keys())
-        return self.source_data['id'] in self.reference.motions.keys()
-
-    def is_motion_saved_without_ballots(self, motion):
-        return motion.vote.has_anonymous_ballots
-
-    def get_motion_id(self):
-        return self.reference.motions[self.source_data['id']]
-
-    def get_vote_id(self):
-        return self.reference.votes[get_vote_key(self.vote['name'], self.vote['start_time'])]
-
-    def get_line_id(self, line_ids):
-        if line_ids:
-            if self.source_data['type'] == 'vote_ballots':
-                offset = len(line_ids) - self.source_data['m_items']
-                return line_ids[(self.source_data['c_item'] + offset)]
-            return line_ids[(-1)]
-        else:
-            return
 
     def parse_results_from_content(self):
         find_results = r'\(?(?P<number>\d+)\)?\s?(glas\w* )?[„\"]? ?(za|protiv|su[zs]?dr[zž]?an\w*)[“\"]?'
@@ -386,7 +363,9 @@ class BallotsParser(BaseParser):
             'against':'against'}
         data = []
         for ballot in self.ballots:
-            person = self.storage.people_storage.get_or_add_person(ballot['voter'])
+            person = self.storage.people_storage.get_or_add_object({
+                "name": ballot['voter']
+            })
             option = option_map[ballot['option']]
             temp = {
                 'option': option,
@@ -413,7 +392,7 @@ class BallotsParser(BaseParser):
     def set_data(self):
         self.save_legislation()
 
-        self.motion = self.session.vote_storage.add_or_get_motion_and_vote(self.motion_data)
+        self.motion = self.session.vote_storage.add_or_get_object(self.motion_data)
 
 
         if self.ballots:
@@ -429,7 +408,7 @@ class BallotsParser(BaseParser):
                     'name': doc['text'],
                     'motion': self.motion.id
                 }
-                self.storage.set_link(data)
+                self.storage.parladata_api.links.set(data)
 
     def parse_time_from_result_data(self):
         time = datetime.strptime(self.source_data['date'], API_DATE_FORMAT + '.')
