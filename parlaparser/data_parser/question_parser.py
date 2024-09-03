@@ -58,7 +58,7 @@ class QuestionParser(BaseParser):
         self.date_f = None
 
         if self.question_storage.check_if_question_is_parsed(self.question):
-            question = self.question_storage.add_or_get_object(self.question)
+            question = self.question_storage.get_or_add_object(self.question)
             if question.answer_timestamp:
                 pass
             else:
@@ -131,7 +131,7 @@ class QuestionParser(BaseParser):
         self.question['recipient_text'] = self.recipient
 
         # send question
-        question = self.question_storage.add_or_get_object(self.question)
+        question = self.question_storage.get_or_add_object(self.question)
         if answer:
             question.add_answer({
                 "text": answer,

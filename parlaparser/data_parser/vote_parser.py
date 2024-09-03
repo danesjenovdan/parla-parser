@@ -85,7 +85,7 @@ class BallotsParser(BaseParser):
             'end_time': end_date,
             'gov_id': data['session_name'].split('.')[0]
         }
-        self.session = self.storage.session_storage.add_or_get_object(session_data)
+        self.session = self.storage.session_storage.get_or_add_object(session_data)
 
         if end_date and (not self.session.end_time):
             self.session.update_end_time(end_date)
@@ -392,7 +392,7 @@ class BallotsParser(BaseParser):
     def set_data(self):
         self.save_legislation()
 
-        self.motion = self.session.vote_storage.add_or_get_object(self.motion_data)
+        self.motion = self.session.vote_storage.get_or_add_object(self.motion_data)
 
 
         if self.ballots:

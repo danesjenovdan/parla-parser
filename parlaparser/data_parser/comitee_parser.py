@@ -96,7 +96,7 @@ class ComiteeParser(BaseParser):
             'in_review':False,
             "classification": 'regular'
         }
-        self.session = self.storage.session_storage.add_or_get_object(session_data)
+        self.session = self.storage.session_storage.get_or_add_object(session_data)
 
     def get_date(self):
         if self.data['datetime_utc']:
@@ -213,7 +213,7 @@ class ComiteeParser(BaseParser):
         motion_data['session'] = self.session.id
         self.data['datetime_utc'] = None
         self.session.load_votes()
-        motion = self.session.vote_storage.add_or_get_object(
+        motion = self.session.vote_storage.get_or_add_object(
             motion_data
         )
         data = []

@@ -40,7 +40,7 @@ class SpeechParser(BaseParser):
         }
 
         # get and set session
-        session = self.storage.session_storage.add_or_get_object(session_data)
+        session = self.storage.session_storage.get_or_add_object(session_data)
 
         self.agenda_ids = []
         methods = []

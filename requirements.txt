@@ -10,4 +10,4 @@ sentry-sdk==1.5.8
 requests==2.27.1
 pyopenssl==22.0.0
 cryptography==38.0.4
-parladata-base-api==0.0.5
+parladata-base-api==0.0.15
