@@ -11,10 +11,10 @@ class PublicQuestionParser(BaseParser):
 
     def __init__(self, data, reference):
 
-        logger.debug('\n \n \n \n')
-        logger.debug( '============= PublicQuestionParser ====================')
-        logger.debug('Data: %s', data)
-        logger.debug('==========================================================')
+        # logger.debug('\n \n \n \n')
+        # logger.debug( '============= PublicQuestionParser ====================')
+        # logger.debug('Data: %s', data)
+        # logger.debug('==========================================================')
 
         # call init of parent object
         super(PublicQuestionParser, self).__init__(reference)
@@ -34,9 +34,9 @@ class PublicQuestionParser(BaseParser):
                 # save new question
                 self.person_name = data['person_name']
                 date = datetime.strptime(self.date, "%d.%m.%Y").isoformat()
-                person = self.storage.people_storage.get_or_add_person(
-                    self.person_name.strip()
-                )
+                person = self.storage.people_storage.get_or_add_object({
+                    "name": self.person_name.strip()
+                })
 
                 # prepere dictionary for setters
                 public_question = {

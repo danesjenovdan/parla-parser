@@ -1,3 +1,5 @@
+# DEPRECATED
+
 from .base_parser import BaseParser
 from .utils import get_vote_key
 

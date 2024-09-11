@@ -43,17 +43,12 @@ class QuestionParser(BaseParser):
         self.date_f = None
 
         if self.question_storage.check_if_question_is_parsed({'gov_id': self.signature}):
-            # TODO edit question if we need it make force_render mode
             logger.debug("This question is already parsed")
 
         else:
             # parse data
             self.parse_time()
             self.parse_data()
-
-
-    def get_question_id(self):
-        return self.reference.questions[self.signature]
 
     def parse_time(self):
         sp = self.date.split(',')
@@ -70,9 +65,9 @@ class QuestionParser(BaseParser):
         else:
             author_ids = []
             author_org_ids = []
-            author = self.storage.people_storage.get_or_add_person(
-                fix_name(self.author),
-            )
+            author = self.storage.people_storage.get_or_add_object({
+                "name": fix_name(self.author),
+            })
 
             author_ids.append(author.id)
 
@@ -91,7 +86,7 @@ class QuestionParser(BaseParser):
             logger.debug('*'*60)
 
             # send question
-            question = self.question_storage.add_or_get_question(self.question)
+            question = self.question_storage.get_or_add_object(self.question)
 
             # send link
             if question.is_new and self.links:
@@ -99,4 +94,4 @@ class QuestionParser(BaseParser):
                     if link['url']:
                         link['question'] = question.id
                         link['url'] = self.base_url + link['url']
-                        self.storage.set_link(link)
+                        self.storage.parladata_api.links.set(link)

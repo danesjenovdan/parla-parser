@@ -29,14 +29,12 @@ class SessionParser(BaseParser):
         super(SessionParser, self).__init__(reference)
         logger.info('.:SESSION PARSER:.')
 
-        self.storage = reference.storage
-
         self.speeches = []
         cut_order = r'^\d*\. '
 
-        organization = self.storage.organization_storage.get_or_add_organization(
-            item['session_of'],
-        )
+        organization = self.storage.organization_storage.get_or_add_object({
+            "name": item['session_of'],
+        })
 
         session_data = {
             "organization": organization.id,
@@ -55,33 +53,29 @@ class SessionParser(BaseParser):
         start_time = datetime.strptime(item['start_date'].strip() + ' ' + item['start_time'].strip(), API_DATE_FORMAT + ' %H:%M')
         session_data['start_time'] = start_time.isoformat()
 
-        session = self.storage.session_storage.add_or_get_session(session_data)
-        session.load_votes()
-        session.load_agenda_items()
-
+        session = self.storage.session_storage.get_or_add_object(session_data)
 
         if 'agenda_items' in item.keys():
             for i, agenda_itme in enumerate(item["agenda_items"]):
-                ai = session.agenda_item_storage.get_or_add_agenda_item({
+                ai = session.agenda_items_storage.get_or_add_object({
                     "datetime": (start_time + timedelta(minutes=i)).isoformat(),
                     "name": agenda_itme["text"],
+                    "session": session.id,
                 })
                 if ai.is_new:
                     for link in agenda_itme["docs"]:
-                        ai.set_link(**link)
+                        link.update(agenda_item=ai.id)
+                        self.storage.parladata_api.links.set(link)
 
-
-
-
-        if 'speeches' in item.keys() and not session.get_speech_count():
-            logger.debug('ima speeches')
+        if "speeches" in item.keys() and not session.get_speech_count():
+            logger.debug("has speeches")
             content_parser = ContentParser(item['speeches'])
             speeches = []
             for order, parsed_speech in enumerate(content_parser.speeches):
 
-                speaker = self.storage.people_storage.get_or_add_person(
-                    fix_name(parsed_speech['speaker']),
-                )
+                speaker = self.storage.people_storage.get_or_add_object({
+                    "name": fix_name(parsed_speech['speaker']),
+                })
 
                 speech = {
                     'session': session.id,
@@ -104,7 +98,12 @@ class SessionParser(BaseParser):
                 epa = self.remove_leading_zeros(legislation['epa'])
                 if self.storage.legislation_storage.is_law_parsed(epa):
                     # law is allredy parsed
-                    law = self.storage.legislation_storage.update_or_add_law({'epa': epa})
+                    law = self.storage.legislation_storage.update_or_add_law(
+                        {
+                            "epa": epa,
+                            "mandate": self.storage.mandate_id,
+                        }
+                    )
 
                     latest_law_consideration_at = law.get_timestamp_of_latest_consideration()
 
@@ -136,7 +135,7 @@ class SessionParser(BaseParser):
                             'timestamp': start_time.isoformat(),
                             'session': session.id,
                             'mandate': self.storage.mandate_id,
-                            'classification': self.storage.legislation_storage.legislation_classifications['law'].id,
+                            'classification': self.storage.legislation_storage.get_legislation_classifications_by_name('law').id,
                             'status': self.storage.legislation_storage.get_legislation_status_by_name(legislation['result'])
                         },
                     )
@@ -191,25 +190,17 @@ class SessionParser(BaseParser):
                         'epa': epa,
                         'law': law_id,
                     }
-                    motion_obj = session.vote_storage.set_motion(motion_data)
-                    vote_data = {
-                        'name': name,
-                        'timestamp': parsed_vote['start_time'].isoformat(),
-                        'session': session.id,
-                        'motion': motion_obj.id
-                    }
-
-                    vote = session.vote_storage.set_vote(vote_data)
+                    motion_obj = session.vote_storage.get_or_add_object(motion_data)
 
                     ballots = []
 
                     for ballot in parsed_vote['ballots']:
-                        voter = self.storage.people_storage.get_or_add_person(
-                            fix_name(ballot['name'])
-                        )
+                        voter = self.storage.people_storage.get_or_add_object({
+                            "name": fix_name(ballot['name'])
+                        })
 
                         temp_ballot = {
-                            'vote': vote['id'],
+                            'vote': motion_obj.vote.id,
                             'option': ballot['option'],
                             'personvoter': voter.id
                             }

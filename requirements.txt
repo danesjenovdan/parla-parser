@@ -1,4 +1,3 @@
-editdistance==0.6.0
 ipython==8.2.0
 pdf2image==1.16.0
 pdftotext==2.1.2
@@ -13,3 +12,4 @@ pyopenssl==22.0.0
 cryptography==38.0.4
 python-slugify
 Twisted==22.10.0
+parladata_base_api==0.0.21
