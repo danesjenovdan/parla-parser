@@ -61,10 +61,6 @@ class BallotsParser(BaseParser):
         self.url = data['url']
         self.docs = data['docs']
         self.session_name = data['session_name'].split('.')[0] + '. sjednica'
-        try:
-            date = datetime.strptime(data['date'], API_DATE_FORMAT + '.').isoformat()
-        except:
-            date = None
 
         end_date_text = data['session_end_date']
         if end_date_text:
@@ -72,19 +68,31 @@ class BallotsParser(BaseParser):
             month = parse_month(end_date_array[1])
             day = int(end_date_array[0].replace(".", ""))
             year = int(end_date_array[2])
-            end_date = datetime(day=day, month=month, year=year)
+            end_date = datetime(day=day, month=month, year=year).isoformat()
         else:
             end_date = None
+
+        start_date_text = data['session_start_date']
+        if start_date_text:
+            start_date_array = start_date_text.split(" ")
+            month = parse_month(start_date_array[1])
+            day = int(start_date_array[0].replace(".", ""))
+            year = int(start_date_array[2])
+            start_date = datetime(day=day, month=month, year=year).isoformat()
+        else:
+            start_date = None
 
         session_data = {
             'organization':self.storage.main_org_id,
             'organizations':[self.storage.main_org_id],
             'in_review':False,
             'name':self.session_name,
-            'start_time': date,
             'end_time': end_date,
-            'gov_id': data['session_name'].split('.')[0]
+            'gov_id': data['session_name'].split('.')[0],
         }
+        if start_date:
+            session_data['start_time'] = start_date
+
         self.session = self.storage.session_storage.get_or_add_object(session_data)
 
         if end_date and (not self.session.end_time):
@@ -113,8 +121,8 @@ class BallotsParser(BaseParser):
             try:
                 self.parse_time_from_result_data()
             except Exception as e:
-                    print("FAILLLLSSSS", e)
-                    return
+                    print("FAILLLLSSSS", self.source_data)
+                    raise e
             if self.session.vote_storage.check_if_motion_is_parsed(self.motion_data):
                 if PARSE_JUST_NEW_VOTES:
                     pass
@@ -184,7 +192,7 @@ class BallotsParser(BaseParser):
 
         self.act_data['mandate'] = self.storage.mandate_id
         if 'date_to_procedure' in self.source_data.keys() and self.source_data['date_to_procedure']:
-            d_time = datetime.strptime(self.source_data['date_to_procedure'], '%Y-%m-%dT%H:%M:%SZ')
+            d_time = self.parse_date(self.source_data['date_to_procedure'])
         elif 'time' in self.source_data.keys():
             d_time = datetime.strptime(self.source_data['time'], '%d.%m.%Y. %H:%M')
         else:
@@ -411,11 +419,19 @@ class BallotsParser(BaseParser):
                 self.storage.parladata_api.links.set(data)
 
     def parse_time_from_result_data(self):
-        time = datetime.strptime(self.source_data['date'], API_DATE_FORMAT + '.')
+        time = self.parse_date(self.source_data['date'])
         self.time_f = time
         self.motion_data['datetime'] = time.isoformat()
         self.vote['timestamp'] = time.isoformat()
-        self.act_data['timestamp'] = time.isoformat()
+        date_to_procedure = self.parse_date(self.source_data['date_to_procedure'])
+        self.act_data['timestamp'] = date_to_procedure.isoformat()
+
+    def parse_date(self, date_str) -> datetime:
+        if "T" in date_str:
+            return datetime.strptime(date_str.split("T")[0], '%Y-%m-%d')
+        else:
+            return datetime.strptime(date_str, API_DATE_FORMAT + '.')
+
 
     def parse_non_balots_balots(self, data):
         opt_map = {
