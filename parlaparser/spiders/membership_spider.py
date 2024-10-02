@@ -10,7 +10,9 @@ class MembershipSpider(scrapy.Spider):
     }
     BASE_URL = "https://www.sabor.hr"
     start_urls = [
-        "https://www.sabor.hr/hr/zastupnici",
+        "https://www.sabor.hr/hr/zastupnici?page=0",
+        "https://www.sabor.hr/hr/zastupnici?page=1",
+        "https://www.sabor.hr/hr/zastupnici?page=2",
         "https://sabor.hr/hr/zastupnici/klubovi-zastupnika",
     ]
     roles = {
@@ -25,7 +27,7 @@ class MembershipSpider(scrapy.Spider):
     def __init__(self, parse_memberships=False, parse_calendar=True, **kwargs):
         (super().__init__)(**kwargs)
 
-    def parse(self, response):
+    def parse_start_json(self, response):
 
         if response.css("h1::text").extract_first() == "Zastupnici u Saboru":
             data = {
@@ -46,11 +48,12 @@ class MembershipSpider(scrapy.Spider):
                     url=self.BASE_URL + url, callback=self.parse_club_page_roles, meta={"page": 0}
                 )
 
+    # def parse_json(self, response):
+    #    j_data = json.loads(response.css('textarea::text').extract_first())
+    #    my_response = scrapy.selector.Selector(text=(j_data[4]['data'].strip()))
 
-    def parse_json(self, response):
-        j_data = json.loads(response.css('textarea::text').extract_first())
-        my_response = scrapy.selector.Selector(text=(j_data[4]['data'].strip()))
-        
+    def parse(self, response):
+        my_response = response
         for person_row in my_response.css("table>tbody>tr"):
             if person_row.css("td>a.no-link-list"):
                 person_name = person_row.css("td>a::text").extract_first()
@@ -71,9 +74,6 @@ class MembershipSpider(scrapy.Spider):
                     callback=self.parse_person_page,
                     #meta={"club_name": name, "role": role},
                 )
-            
-                
-
 
     def __parse__(self, response):
         """
@@ -196,11 +196,9 @@ class MembershipSpider(scrapy.Spider):
                     meta={"page": next_page},
                 )
 
-
-
     def parse_person_page(self, response):
         role = response.meta.get("role")
-        data_divs = response.css("div.sabor_data_entity>div")
+        data_divs = response.css("article>div.views-element-container")
 
         name_div = data_divs[0]
         personal_div = data_divs[1]
@@ -216,84 +214,74 @@ class MembershipSpider(scrapy.Spider):
         personal_notes = personal_div.css("div.zivotopis>p::text").extract_first().strip()
         mandates = 1
 
-        for sector in sabor_data.css("div.views-element-container"):
-            title = sector.css("div.eva-header>h3::text").extract_first()
-            if title:
-                title = title.strip()
+        mandate_start_date = (
+            response.css("div.view-display-id-pocetak_mandata>div.views-row time::text").extract_first()
+        )
+
+        club_names = response.css("div.view-display-id-klub_zastupnika div.item-list a::text").extract()
+
+        mandates = len(response.css("div.view-display-id-prethodni_sazivi a")) + 1
+
+        for i in club_names:
+            # TODO: remove this when parlameter support multiple clubs for a person
+            if 'Klub zastupnika nacionalnih manjina' in i:
+                continue
             else:
+                club_name = i.strip()
+
+        for commitee_selector in response.css("div.view-display-id-duznosti>div.item-list>ul>li"):
+            temp_commitee = {}
+
+            temp_commitee["role"] = (
+                commitee_selector.css(
+                    "span.views-field-field-funkcija>span::text"
+                )
+                .extract_first()
+                .strip().lower()
+            )
+
+            if temp_commitee["role"].startswith("zamjen"):
+                # skip Zamjenica memberships
                 continue
 
-            if title == "Početak obnašanja zastupničkog mandata:":
-                # start of mandate
-                mandate_start_date = (
-                    sector.css("div.field-content::text").extract_first().strip()
-                )
-            if title == "Klub zastupnika:":
-                club_names = sector.css("a::text").extract()
-                for i in club_names:
-                    # TODO: remove this when parlameter support multiple clubs for a person
-                    if 'Klub zastupnika nacionalnih manjina' in i:
-                        continue
-                    else:
-                        club_name = i.strip()
+            name_genitiv = commitee_selector.css(
+                "span.views-field-label>span>a::text"
+            ).extract_first()
+            name_genitiv_1 = commitee_selector.css(
+                "span.views-field-label-1>span>a::text"
+            ).extract_first()
+            name_genitiv_2 = commitee_selector.css(
+                "span.views-field-label-2>span>a::text"
+            ).extract_first()
 
-            if title == "Pregled saziva:":
-                mandates = len(sector.css("a")) + 1
-                
-
-            if title == "Dužnosti u saboru:":
-                for commitee_selector in sector.css("div.item-list>ul>li"):
-                    temp_commitee = {}
-
+            if not any([name_genitiv, name_genitiv_1, name_genitiv_2]):
+                if "sabor" in temp_commitee["role"]:
+                    commitee_name = "Sabor"
                     temp_commitee["role"] = (
-                        commitee_selector.css(
-                            "span.views-field-field-funkcija>span::text"
-                        )
-                        .extract_first()
-                        .strip().lower()
+                        temp_commitee["role"].split("sabor")[0].strip()
                     )
+                else:
+                    raise Exception("No name found")
+            else:
+                commitee_name = (
+                    name_genitiv
+                    if name_genitiv
+                    else name_genitiv_1 if name_genitiv_1 else name_genitiv_2
+                )
 
-                    if temp_commitee["role"].startswith("zamjen"):
-                        # skip Zamjenica memberships
-                        continue
+            temp_commitee["name"] = commitee_name.strip()
 
-                    name_genitiv = commitee_selector.css(
-                        "span.views-field-field-naziv-u-genitivu>span>a::text"
-                    ).extract_first()
-                    name_genitiv_1 = commitee_selector.css(
-                        "span.views-field-field-naziv-u-genitivu-1>span>a::text"
-                    ).extract_first()
-                    name_genitiv_2 = commitee_selector.css(
-                        "span.views-field-field-naziv-u-genitivu-2>span>a::text"
-                    ).extract_first()
-                    if not any([name_genitiv, name_genitiv_1, name_genitiv_2]):
-                        if "sabor" in temp_commitee["role"]:
-                            commitee_name = "Sabor"
-                            temp_commitee["role"] = (
-                                temp_commitee["role"].split("sabor")[0].strip()
-                            )
-                        else:
-                            raise Exception("No name found")
-                    else:
-                        commitee_name = (
-                            name_genitiv
-                            if name_genitiv
-                            else name_genitiv_1 if name_genitiv_1 else name_genitiv_2
-                        )
+            start_date = commitee_selector.css(
+                "span.views-field-field-od-1>span::text, span.views-field-field-datum-pocetka-1>span::text"
+            ).extract_first()
+            if start_date:
+                temp_commitee["start_date"] = start_date.strip().strip("() od")
 
-                    temp_commitee["name"] = commitee_name.strip()
+            memberships.append(temp_commitee)
 
-                    start_date = commitee_selector.css(
-                        "span.views-field-field-od>span::text, span.views-field-field-datum-pocetka-1>span::text"
-                    ).extract_first()
-                    if start_date:
-                        temp_commitee["start_date"] = start_date.strip().strip("() od")
+        print(memberships)
 
-                    memberships.append(temp_commitee)
-
-            if title == "Članstvo u međuparlamentarnim skupinama prijateljstva:":
-                # end of mandate
-                friendships = sector.css("a::text").extract()
+        friendships = response.css("div.view-display-id-skupina_prijateljstva a::text").extract()
 
         yield {
             "type": "person",
@@ -306,7 +294,6 @@ class MembershipSpider(scrapy.Spider):
             "mandates": mandates,
             "zivotopis": personal_notes,
         }
-
 
     def close(self, spider):
         self.myPipeline.save_memberships()
