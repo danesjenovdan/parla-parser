@@ -13,6 +13,7 @@ class MembershipSpider(scrapy.Spider):
         "https://www.sabor.hr/hr/zastupnici?page=0",
         "https://www.sabor.hr/hr/zastupnici?page=1",
         "https://www.sabor.hr/hr/zastupnici?page=2",
+        "https://www.sabor.hr/hr/zastupnici?page=3",
         "https://sabor.hr/hr/zastupnici/klubovi-zastupnika",
     ]
     roles = {
@@ -42,7 +43,7 @@ class MembershipSpider(scrapy.Spider):
                 data["page"] = f"0,{i}"
                 yield scrapy.FormRequest(url, callback=(self.parse_json), method='POST', formdata=data)
         else:
-            for club in response.css("span.export-row-data>a"):
+            for club in response.css("span.link-vise>a"):
                 url = club.css("::attr(href)").extract_first()
                 yield scrapy.Request(
                     url=self.BASE_URL + url, callback=self.parse_club_page_roles, meta={"page": 0}
@@ -53,27 +54,34 @@ class MembershipSpider(scrapy.Spider):
     #    my_response = scrapy.selector.Selector(text=(j_data[4]['data'].strip()))
 
     def parse(self, response):
-        my_response = response
-        for person_row in my_response.css("table>tbody>tr"):
-            if person_row.css("td>a.no-link-list"):
-                person_name = person_row.css("td>a::text").extract_first()
-                person_name = person_name.split(", ")[1] + " " + person_name.split(", ")[0]
-                yield {
-                    "type": "person",
-                    "name": person_name,
-                    #"img_url": None,
-                    "club_role": None,
-                    "club_name": None,
-                    "commitees": [],
-                    "friendships": [],
-                }
-            else:
-                person_page = person_row.css("td>a::attr(href)").extract_first()
+        if response.css("h1::text").extract_first() == "Zastupnici u Saboru":
+            for person_row in response.css("table>tbody>tr"):
+                if person_row.css("td>a.no-link-list"):
+                    person_name = person_row.css("td>a::text").extract_first()
+                    person_name = person_name.split(", ")[1] + " " + person_name.split(", ")[0]
+                    yield {
+                        "type": "person",
+                        "name": person_name,
+                        #"img_url": None,
+                        "club_role": None,
+                        "club_name": None,
+                        "commitees": [],
+                        "friendships": [],
+                    }
+                else:
+                    person_page = person_row.css("td>a::attr(href)").extract_first()
+                    yield scrapy.Request(
+                        url=self.BASE_URL + person_page,
+                        callback=self.parse_person_page,
+                        #meta={"club_name": name, "role": role},
+                    )
+        else:
+            for club in response.css("span.link-vise>a"):
+                url = club.css("::attr(href)").extract_first()
                 yield scrapy.Request(
-                    url=self.BASE_URL + person_page,
-                    callback=self.parse_person_page,
-                    #meta={"club_name": name, "role": role},
+                    url=self.BASE_URL + url, callback=self.parse_club_page_roles, meta={"page": 0}
                 )
+
 
     def __parse__(self, response):
         """
@@ -149,37 +157,35 @@ class MembershipSpider(scrapy.Spider):
                 )
 
     def parse_club_page_roles(self, response):
-        current_page = response.meta.get("page", 0)
-        name = response.css("h2.pre-title-second::text").extract_first()
-        if name.strip() == "Klub zastupnika nacionalnih manjina":
-            return
-
-        content = response.css("div.sabor_data_entity")[0]
-        for role_entry in content.css("div.views-element-container>div"):
-            if role_entry.css(".klub-prethodni-clanovi"):
-                # TODO return previous members for end memberships
-                continue
-            else:
-                role = role_entry.css("h2.funkcija-naziv::text").extract_first().strip()
-
-                if role.startswith("zamjen"):
-                    # skip zamjenih memberships
-                    continue
-
-                if (current_page > 0) and not role.startswith("Član"):
-                    # skip all roles except members on subsequent pages
-                    continue
-                entries = role_entry.css("div.row>div")
-                for entry in entries:
-                    person_name = entry.css("span.ime-prezime::text").extract_first().strip()
-                    person_name = person_name.split(", ")[1] + " " + person_name.split(", ")[0]
-
-                    yield {
+        def prepare_role_object(club_name, role, name):
+            splited_person_name = name.strip().split(", ")
+            person_name = splited_person_name[1] + " " + splited_person_name[0]
+            return {
                         "type": "club_roles",
-                        "club_name": name,
+                        "club_name": club_name,
                         "person_name": person_name,
                         "role": role,
                     }
+
+        current_page = response.meta.get("page", 0)
+        club_name = response.css("h2.club-title span.field-content::text").extract_first()
+        if club_name.strip() == "Klub zastupnika nacionalnih manjina":
+            return
+        
+        if current_page == 0:
+            president = response.css("article>div.views-element-container>div.view-display-id-predsjednik")
+            deputies = response.css("article>div.views-element-container>div.view-display-id-potpredsjednici")
+            president_names = president.css("div.ime-prezime::text").extract()
+            for name in president_names:
+                yield prepare_role_object(club_name, "president", name)
+            deputy_names = deputies.css("div.ime-prezime::text").extract()
+            for name in deputy_names:
+                yield prepare_role_object(club_name, "deputy", name)
+
+        members = response.css("article>div.views-element-container>div.view-display-id-clanovi")
+        memebr_names = members.css("div.ime-prezime::text").extract()
+        for name in memebr_names:
+            yield prepare_role_object(club_name, "member", name)
 
         if response.css("li.pager__item.pager__item--last"):
             last_page_url = response.css(
@@ -195,6 +201,51 @@ class MembershipSpider(scrapy.Spider):
                     callback=self.parse_club_page_roles,
                     meta={"page": next_page},
                 )
+
+
+
+
+        # content = response.css("div.sabor_data_entity")[0]
+        # for role_entry in content.css("div.views-element-container>div"):
+        #     if role_entry.css(".klub-prethodni-clanovi"):
+        #         # TODO return previous members for end memberships
+        #         continue
+        #     else:
+        #         role = role_entry.css("h2.funkcija-naziv::text").extract_first().strip()
+
+        #         if role.startswith("zamjen"):
+        #             # skip zamjenih memberships
+        #             continue
+
+        #         if (current_page > 0) and not role.startswith("Član"):
+        #             # skip all roles except members on subsequent pages
+        #             continue
+        #         entries = role_entry.css("div.row>div")
+        #         for entry in entries:
+        #             person_name = entry.css("span.ime-prezime::text").extract_first().strip()
+        #             person_name = person_name.split(", ")[1] + " " + person_name.split(", ")[0]
+
+        #             yield {
+        #                 "type": "club_roles",
+        #                 "club_name": name,
+        #                 "person_name": person_name,
+        #                 "role": role,
+        #             }
+
+        # if response.css("li.pager__item.pager__item--last"):
+        #     last_page_url = response.css(
+        #         "li.pager__item.pager__item--last>a::attr(href)"
+        #     ).extract_first()
+        #     last_page = int(last_page_url.split("=")[1])
+
+        #     if current_page < last_page:
+        #         next_page = current_page + 1
+        #         next_page_url = response.url.split("?")[0] + "?page=" + str(next_page)
+        #         yield scrapy.Request(
+        #             url=next_page_url,
+        #             callback=self.parse_club_page_roles,
+        #             meta={"page": next_page},
+        #        )
 
     def parse_person_page(self, response):
         role = response.meta.get("role")

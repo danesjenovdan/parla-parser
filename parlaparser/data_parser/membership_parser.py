@@ -61,6 +61,9 @@ ROLES = {
         "član": "member",
         "voditeljica": "leader",
         "voditelj": "leader",
+        "president": "president",
+        "deputy": "deputy",
+        "member": "member",
     }
 
 class ImageParser(BaseParser):
