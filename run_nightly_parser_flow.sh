@@ -12,8 +12,8 @@ echo "start setting legislation results"
 # python manage.py set_motion_tags
 # echo "start pairing votes with speeches"
 # python manage.py pair_votes_and_speeches
-echo "lematize speeches"
-python manage.py lemmatize_speeches
+# echo "lematize speeches"
+# python manage.py lemmatize_speeches
 echo "set tfidf"
 python manage.py set_tfidf_for_sessions
 echo "run analysis for today"
