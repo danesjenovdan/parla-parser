@@ -23,7 +23,7 @@ class SpeechParser(BaseParser):
         self.speeches = []
 
         organization = self.storage.organization_storage.get_organization_by_id(
-            self.storage.main_org_id
+            int(self.storage.main_org_id)
         )
         gov_id = data['agenda_id']
         session = data['session_ref'][0].split(':')[-1].strip()
@@ -56,10 +56,10 @@ class SpeechParser(BaseParser):
             }
             # agenda_key = AgendaItem.get_key_from_dict(agenda_json)
 
-            agenda_item, added = session.agenda_items_storage.get_or_add_object(agenda_json)
+            agenda_item = session.agenda_items_storage.get_or_add_object(agenda_json)
             self.agenda_ids.append(agenda_item.id)
-            print(added, agenda_text.strip())
-            methods.append(added)
+            print(agenda_item.is_new, agenda_text.strip())
+            methods.append(agenda_item.is_new)
 
         print(methods)
         # skip adding speeches if any agenda_item already exists
@@ -86,9 +86,3 @@ class SpeechParser(BaseParser):
             print('SKIPPP agenda item set failed')
         else:
             print('SKIPP this agenda item allready parsed')
-
-
-    def parse_time(self):
-        self.speech['valid_from'] = self.date.isoformat()
-        self.speech['start_time'] = self.date.isoformat()
-        self.speech['valid_to'] = datetime.max.isoformat()
