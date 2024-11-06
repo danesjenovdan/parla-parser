@@ -139,7 +139,7 @@ class VotesSpider(scrapy.Spider):
         }
 
         motion_data = requests.get(f"https://www.sabor.hr/hr/rezultati-glasovanja-servis/{tid}/", verify=False)
-        if motion_data.status_code == 200:
+        if item_type == 'vote' and motion_data.status_code == 200:
             motion_data = motion_data.json()
             yield self.parse_ballots(motion_data, response.url, tid, docs, response.meta['session_name'], response.meta['start_date'], response.meta['end_date'],)
             return
