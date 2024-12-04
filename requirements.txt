@@ -10,5 +10,5 @@ sentry-sdk==1.5.8
 requests==2.28.0
 pyopenssl==22.0.0
 cryptography==38.0.4
-parladata-base-api==0.1.8
+parladata-base-api==0.1.9
 git+https://github.com/danesjenovdan/classla.git@upgrade-numpy
