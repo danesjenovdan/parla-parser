@@ -6,4 +6,4 @@ resources:
 images:
   - name: parlaparser-bosna
     newName: rg.fr-par.scw.cloud/djnd/parlaparser-bosna
-    newTag: 'b6d2e11ba72b1dbd359e733e8457a5d82cf2d8f2'
+    newTag: '24042d2df8d75fa85a26460ad85cd72cb471a067'
