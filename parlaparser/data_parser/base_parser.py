@@ -1,13 +1,3 @@
-from .utils import fix_name, name_parser
-
-from ..settings import API_URL, API_AUTH
-
-from requests.auth import HTTPBasicAuth
-
-import requests
-import editdistance
-
-from datetime import datetime
 
 import logging
 logger = logging.getLogger('base logger')

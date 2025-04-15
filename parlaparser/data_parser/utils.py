@@ -1,5 +1,5 @@
 from datetime import datetime
-import editdistance
+
 
 def get_vote_key(name, date):
     return (str(name) + date).strip().lower()
@@ -37,12 +37,6 @@ def parse_month(month_str):
             return i + 1
     return None
 
-def get_person_id(members, name):
-        for key in members.keys():
-            for parser_name in key.split(','):
-                if editdistance.eval(name, parser_name) < 1:
-                    return members[key]
-        return None
 
 def decode_parser_name(text):
     try:
