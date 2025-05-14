@@ -165,6 +165,7 @@ class SessionParser(BaseParser):
                     }):
                 
                     epa = self.find_epa(parsed_vote['agenda_item_name'])
+                    epa = self.remove_leading_zeros(epa)
                     law = self.storage.legislation_storage.get_law(epa)
                     if law:
                         law_id = law.id
