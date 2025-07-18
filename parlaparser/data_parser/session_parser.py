@@ -508,8 +508,8 @@ class VotesParser(get_PDF):
                 logger.debug("\n New VOTE \n")
                 self.state = 'start'
                 current_vote['name'] = ' '.join(current_vote['name'])
-                current_vote['name'] = self.merge_name(current_vote['name'], ' '.join(current_vote['agenda_item_name']), current_vote.get('type', ''))
-                current_vote['agenda_item_name'] = ' '.join(current_vote['agenda_item_name'])
+                current_vote['name'] = self.fix_characters(self.merge_name(current_vote['name'], ' '.join(current_vote['agenda_item_name']), current_vote.get('type', '')))
+                current_vote['agenda_item_name'] = self.fix_characters(' '.join(current_vote['agenda_item_name']))
                 logger.debug(current_vote['name'])
                 if current_vote['ballots']:
                     self.votes.append(current_vote)
@@ -640,6 +640,27 @@ class VotesParser(get_PDF):
                 self.state = next_state
                 self.found_keyword = False
             return line.strip()
+
+    def fix_characters(self, text):
+        fixes = {
+            "ě": "č",
+            "ę": "ć",
+            "Ę": "Ć",
+            "Ā": "š",
+            "Ă": "ž",
+            "Ě": "Č",
+            "ÿ": "Š",
+            "Ą": "đ",
+            "Ĝ": "đ",
+            "±": "",
+            "’": "'",
+            "“": '"',
+            "”": '"',
+            "\x03": "",
+        }
+        for error, fix in fixes.items():
+            text = text.replace(error, fix)
+        return text
 
 
 class VotesParserPeople(get_PDF):
