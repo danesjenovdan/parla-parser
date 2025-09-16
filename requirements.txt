@@ -12,4 +12,4 @@ pyopenssl==22.0.0
 cryptography==38.0.4
 python-slugify
 Twisted==22.10.0
-parladata_base_api==0.0.21
+parladata-base-api==0.3.0

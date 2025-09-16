@@ -135,7 +135,7 @@ class SessionParser(BaseParser):
                             'timestamp': start_time.isoformat(),
                             'session': session.id,
                             'mandate': self.storage.mandate_id,
-                            'classification': self.storage.legislation_storage.get_legislation_classifications_by_name('law').id,
+                            'classification': self.storage.legislation_storage.get_legislation_classifications_by_name('law'),
                             'status': self.storage.legislation_storage.get_legislation_status_by_name(legislation['result'])
                         },
                     )
