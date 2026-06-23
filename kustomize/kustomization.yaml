@@ -6,4 +6,4 @@ resources:
 images:
   - name: parlaparser-medvode
     newName: rg.fr-par.scw.cloud/djnd/parlaparser-medvode
-    newTag: '4bd884b5a2ce6125b21adcd2bd6c0d112163878b'
+    newTag: 'a44e4974f080aa19ed939b0e1f67e88647d5d3b2'
