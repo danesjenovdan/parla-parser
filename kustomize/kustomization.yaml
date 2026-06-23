@@ -6,4 +6,4 @@ resources:
 images:
   - name: parlaparser-hrastnik
     newName: rg.fr-par.scw.cloud/djnd/parlaparser-hrastnik
-    newTag: '169f8740a3fa6a0399bcd598fc5bcda121e58056'
+    newTag: '9d60fb50c051fe3c81fbf7b88577963a4c883cd3'
