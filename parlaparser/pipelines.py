@@ -20,6 +20,8 @@ from parladata_base_api.storages.storage import DataStorage
 from parladata_base_api.storages.session_storage import Session
 from parladata_base_api.storages.agenda_item_storage import AgendaItem
 
+from collections import defaultdict
+
 import logging
 
 logger = logging.getLogger("pipeline logger")
@@ -35,6 +37,7 @@ class ParlaparserPipeline(object):
         # set custom keys for ParladataBaseApi
         Session.keys = ["name", "organizations"]
         AgendaItem.keys = ["name", "session"]
+        self.storage.membership_storage.per_person_data = defaultdict(lambda: defaultdict(list))
 
     def process_item(self, item, spider):
         if type(spider) == SpeechSpider:
